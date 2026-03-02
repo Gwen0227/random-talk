@@ -48,7 +48,6 @@ export async function getRecentPosts(
   return posts.slice(0, count)
 }
 
-// 新增：補回 About 頁面需要的 getAllProjects
 export async function getAllProjects(): Promise<CollectionEntry<'projects'>[]> {
   const projects = await getCollection('projects')
   return projects.sort((a, b) => {
@@ -168,10 +167,40 @@ export async function getSubpostCount(parentId: string): Promise<number> {
 }
 
 export async function hasSubposts(postId: string): Promise<boolean> {
-  return (await getSubpostCount(postId)) > 0
+  const count = await getSubpostCount(postId)
+  return count > 0
 }
 
 // --- 閱讀時間計算 ---
 
 export async function getPostReadingTime(postId: string): Promise<string> {
   const post = await getPostById(postId)
+  if (!post) return readingTime(0)
+  return readingTime(calculateWordCountFromHtml(post.body))
+}
+
+export async function getCombinedReadingTime(postId: string): Promise<string> {
+  const post = await getPostById(postId)
+  if (!post) return readingTime(0)
+
+  let totalWords = calculateWordCountFromHtml(post.body)
+  if (!isSubpost(postId)) {
+    const subposts = await getSubpostsForParent(postId)
+    for (const subpost of subposts) {
+      totalWords += calculateWordCountFromHtml(subpost.body)
+    }
+  }
+  return readingTime(totalWords)
+}
+
+// --- 目錄結構 (TOC) ---
+
+export async function getTOCSections(postId: string): Promise<TOCSection[]> {
+  const post = await getPostById(postId)
+  if (!post) return []
+
+  const parentId = isSubpost(postId) ? getParentId(postId) : postId
+  const parentPost = await getPostById(parentId)
+  if (!parentPost) return []
+
+  const sections: TOCSection[] = []
