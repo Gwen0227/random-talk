@@ -1,6 +1,21 @@
 import { getCollection, render, type CollectionEntry } from 'astro:content'
 import { readingTime, calculateWordCountFromHtml } from '@/lib/utils'
 
+// --- 定義 TOC 型別 ---
+export type TOCHeading = {
+  slug: string
+  text: string
+  depth: number
+  isSubpostTitle?: boolean
+}
+
+export type TOCSection = {
+  type: 'parent' | 'subpost'
+  title: string
+  headings: TOCHeading[]
+  subpostId?: string
+}
+
 // --- 基礎抓取函式 ---
 
 export async function getAllPosts(): Promise<CollectionEntry<'blog'>[]> {
@@ -31,6 +46,16 @@ export async function getRecentPosts(
 ): Promise<CollectionEntry<'blog'>[]> {
   const posts = await getAllPosts()
   return posts.slice(0, count)
+}
+
+// 新增：補回 About 頁面需要的 getAllProjects
+export async function getAllProjects(): Promise<CollectionEntry<'projects'>[]> {
+  const projects = await getCollection('projects')
+  return projects.sort((a, b) => {
+    const dateA = a.data.startDate?.getTime() || 0
+    const dateB = b.data.startDate?.getTime() || 0
+    return dateB - dateA
+  })
 }
 
 // --- 分類與標籤 ---
@@ -64,7 +89,7 @@ export async function getPostsByTag(
   return posts.filter((post) => post.data.tags?.includes(tag))
 }
 
-// --- 文章導航 (上下篇) ---
+// --- 文章導航 ---
 
 export async function getAdjacentPosts(currentId: string): Promise<{
   newer: CollectionEntry<'blog'> | null
@@ -150,48 +175,3 @@ export async function hasSubposts(postId: string): Promise<boolean> {
 
 export async function getPostReadingTime(postId: string): Promise<string> {
   const post = await getPostById(postId)
-  if (!post) return readingTime(0)
-  return readingTime(calculateWordCountFromHtml(post.body))
-}
-
-export async function getCombinedReadingTime(postId: string): Promise<string> {
-  const post = await getPostById(postId)
-  if (!post) return readingTime(0)
-
-  let totalWords = calculateWordCountFromHtml(post.body)
-  if (!isSubpost(postId)) {
-    const subposts = await getSubpostsForParent(postId)
-    for (const subpost of subposts) {
-      totalWords += calculateWordCountFromHtml(subpost.body)
-    }
-  }
-  return readingTime(totalWords)
-}
-
-// --- 其他輔助 ---
-
-export function groupPostsByYear(
-  posts: CollectionEntry<'blog'>[],
-): Record<string, CollectionEntry<'blog'>[]> {
-  return posts.reduce(
-    (acc: Record<string, CollectionEntry<'blog'>[]>, post) => {
-      const year = post.data.date.getFullYear().toString()
-      ;(acc[year] ??= []).push(post)
-      return acc
-    },
-    {},
-  )
-}
-
-export async function getTOCSections(postId: string) {
-  const post = await getPostById(postId)
-  if (!post) return []
-
-  const parentId = isSubpost(postId) ? getParentId(postId) : postId
-  const parentPost = await getPostById(parentId)
-  if (!parentPost) return []
-
-  const sections = []
-  const { headings: parentHeadings } = await render(parentPost)
-  if (parentHeadings.length > 0) {
-    sections.push({ type: 'parent', title: 'Overview',
