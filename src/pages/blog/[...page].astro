@@ -2,7 +2,8 @@
 import BlogCard from '@/components/BlogCard.astro'
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
 import PageHead from '@/components/PageHead.astro'
-// 移除 PaginationComponent 引入，因為用不到了
+// 把這個加回來
+import PaginationComponent from '@/components/ui/pagination'
 import { SITE } from '@/consts'
 import Layout from '@/layouts/Layout.astro'
 import { getAllPosts, groupPostsByYear } from '@/lib/data-utils'
@@ -32,92 +33,27 @@ const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a))
     ]}
   />
 
-  <div 
-    id="infinite-scroll-wrapper"
-    data-current-page={page.currentPage} 
-    data-total-pages={page.lastPage}
-  >
-    <div id="post-container" class="flex min-h-[calc(100vh-18rem)] flex-col gap-y-8">
-      {
-        years.map((year) => (
-          <section class="flex flex-col gap-y-4">
-            <div class="font-medium text-muted-foreground">{year}</div>
-            <ul class="flex flex-col gap-4">
-              {postsByYear[year].map((post) => (
-                <li>
-                  <BlogCard entry={post} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
-      }
-    </div>
-
-    <div id="scroll-sentinel" class="h-20 w-full flex justify-center items-center">
-      <div id="loader" class="hidden text-sm text-muted-foreground animate-pulse">
-        Loading more posts...
-      </div>
-    </div>
-  </div>
-</Layout>
-
-<script>
-  function setupInfiniteScroll() {
-    const wrapper = document.getElementById('infinite-scroll-wrapper');
-    const container = document.getElementById('post-container');
-    const sentinel = document.getElementById('scroll-sentinel');
-    const loader = document.getElementById('loader');
-
-    if (!wrapper || !container || !sentinel) return;
-
-    let currentPage = parseInt(wrapper.dataset.currentPage || '1');
-    const totalPages = parseInt(wrapper.dataset.totalPages || '1');
-    let isLoading = false;
-
-    if (currentPage >= totalPages) {
-      sentinel.style.display = 'none';
-      return;
+  <div class="flex min-h-[calc(100vh-18rem)] flex-col gap-y-8">
+    {
+      years.map((year) => (
+        <section class="flex flex-col gap-y-4">
+          <div class="font-medium text-muted-foreground">{year}</div>
+          <ul id="post-container" class="flex flex-col gap-4">
+            {postsByYear[year].map((post) => (
+              <li>
+                <BlogCard entry={post} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
     }
+  </div>
 
-    const observer = new IntersectionObserver(async (entries) => {
-      if (entries[0].isIntersecting && !isLoading && currentPage < totalPages) {
-        isLoading = true;
-        currentPage++;
-        loader?.classList.remove('hidden');
-
-        try {
-          const response = await fetch(`/blog/${currentPage}`);
-          if (!response.ok) throw new Error('Next page not found');
-          
-          const html = await response.text();
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const newPosts = doc.getElementById('post-container');
-
-          if (newPosts && container) {
-            container.innerHTML += newPosts.innerHTML;
-          }
-
-          if (currentPage >= totalPages) {
-            observer.disconnect();
-            sentinel.style.display = 'none';
-          }
-        } catch (error) {
-          console.error('Error loading posts:', error);
-          observer.disconnect();
-        } finally {
-          isLoading = false;
-          loader?.classList.add('hidden');
-        }
-      }
-    }, {
-      rootMargin: '400px',
-    });
-
-    observer.observe(sentinel);
-  }
-
-  // 確保在 Astro 頁面載入時執行
-  document.addEventListener('astro:page-load', setupInfiniteScroll);
-</script>
+  <PaginationComponent
+    currentPage={page.currentPage}
+    totalPages={page.lastPage}
+    baseUrl="/blog/"
+    client:load
+  />
+</Layout>
