@@ -1,9 +1,7 @@
 import { getCollection, render, type CollectionEntry } from 'astro:content'
 import { readingTime, calculateWordCountFromHtml } from '@/lib/utils'
 
-export async function getAllAuthors(): Promise<CollectionEntry<'authors'>[]> {
-  return await getCollection('authors')
-}
+// 已移除 getAllAuthors，因為不再使用 authors collection
 
 export async function getAllPosts(): Promise<CollectionEntry<'blog'>[]> {
   const posts = await getCollection('blog')
@@ -99,12 +97,7 @@ export async function getAdjacentPosts(currentId: string): Promise<{
   }
 }
 
-export async function getPostsByAuthor(
-  authorId: string,
-): Promise<CollectionEntry<'blog'>[]> {
-  const posts = await getAllPosts()
-  return posts.filter((post) => post.data.authors?.includes(authorId))
-}
+// 已移除 getPostsByAuthor，避免 ts(2339) 錯誤
 
 export async function getPostsByTag(
   tag: string,
@@ -161,144 +154,4 @@ export function groupPostsByYear(
   posts: CollectionEntry<'blog'>[],
 ): Record<string, CollectionEntry<'blog'>[]> {
   return posts.reduce(
-    (acc: Record<string, CollectionEntry<'blog'>[]>, post) => {
-      const year = post.data.date.getFullYear().toString()
-      ;(acc[year] ??= []).push(post)
-      return acc
-    },
-    {},
-  )
-}
-
-export async function hasSubposts(postId: string): Promise<boolean> {
-  const subposts = await getSubpostsForParent(postId)
-  return subposts.length > 0
-}
-
-export function isSubpost(postId: string): boolean {
-  return postId.includes('/')
-}
-
-export async function getParentPost(
-  subpostId: string,
-): Promise<CollectionEntry<'blog'> | null> {
-  if (!isSubpost(subpostId)) {
-    return null
-  }
-
-  const parentId = getParentId(subpostId)
-  const allPosts = await getAllPosts()
-  return allPosts.find((post) => post.id === parentId) || null
-}
-
-export async function parseAuthors(authorIds: string[] = []) {
-  if (!authorIds.length) return []
-
-  const allAuthors = await getAllAuthors()
-  const authorMap = new Map(allAuthors.map((author) => [author.id, author]))
-
-  return authorIds.map((id) => {
-    const author = authorMap.get(id)
-    return {
-      id,
-      name: author?.data?.name || id,
-      avatar: author?.data?.avatar || '/static/logo.png',
-      isRegistered: !!author,
-    }
-  })
-}
-
-export async function getPostById(
-  postId: string,
-): Promise<CollectionEntry<'blog'> | null> {
-  const allPosts = await getAllPostsAndSubposts()
-  return allPosts.find((post) => post.id === postId) || null
-}
-
-export async function getSubpostCount(parentId: string): Promise<number> {
-  const subposts = await getSubpostsForParent(parentId)
-  return subposts.length
-}
-
-export async function getCombinedReadingTime(postId: string): Promise<string> {
-  const post = await getPostById(postId)
-  if (!post) return readingTime(0)
-
-  let totalWords = calculateWordCountFromHtml(post.body)
-
-  if (!isSubpost(postId)) {
-    const subposts = await getSubpostsForParent(postId)
-    for (const subpost of subposts) {
-      totalWords += calculateWordCountFromHtml(subpost.body)
-    }
-  }
-
-  return readingTime(totalWords)
-}
-
-export async function getPostReadingTime(postId: string): Promise<string> {
-  const post = await getPostById(postId)
-  if (!post) return readingTime(0)
-
-  const wordCount = calculateWordCountFromHtml(post.body)
-  return readingTime(wordCount)
-}
-
-export type TOCHeading = {
-  slug: string
-  text: string
-  depth: number
-  isSubpostTitle?: boolean
-}
-
-export type TOCSection = {
-  type: 'parent' | 'subpost'
-  title: string
-  headings: TOCHeading[]
-  subpostId?: string
-}
-
-export async function getTOCSections(postId: string): Promise<TOCSection[]> {
-  const post = await getPostById(postId)
-  if (!post) return []
-
-  const parentId = isSubpost(postId) ? getParentId(postId) : postId
-  const parentPost = isSubpost(postId) ? await getPostById(parentId) : post
-
-  if (!parentPost) return []
-
-  const sections: TOCSection[] = []
-
-  const { headings: parentHeadings } = await render(parentPost)
-  if (parentHeadings.length > 0) {
-    sections.push({
-      type: 'parent',
-      title: 'Overview',
-      headings: parentHeadings.map((heading) => ({
-        slug: heading.slug,
-        text: heading.text,
-        depth: heading.depth,
-      })),
-    })
-  }
-
-  const subposts = await getSubpostsForParent(parentId)
-  for (const subpost of subposts) {
-    const { headings: subpostHeadings } = await render(subpost)
-    if (subpostHeadings.length > 0) {
-      sections.push({
-        type: 'subpost',
-        title: subpost.data.title,
-        headings: subpostHeadings.map((heading, index) => ({
-          slug: heading.slug,
-          text: heading.text,
-          depth: heading.depth,
-          isSubpostTitle: index === 0,
-        })),
-        subpostId: subpost.id,
-      })
-    }
-  }
-
-  return sections
-}
+    (acc: Record<string, CollectionEntry<'blog'>[]>, post
