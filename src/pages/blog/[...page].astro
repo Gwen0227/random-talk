@@ -2,7 +2,6 @@
 import BlogCard from '@/components/BlogCard.astro'
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
 import PageHead from '@/components/PageHead.astro'
-// 把這個加回來
 import PaginationComponent from '@/components/ui/pagination'
 import { SITE } from '@/consts'
 import Layout from '@/layouts/Layout.astro'
@@ -22,6 +21,10 @@ const { page } = Astro.props
 
 const postsByYear = groupPostsByYear(page.data)
 const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a))
+
+// --- 關鍵修正：確保分頁連結包含 GitHub Pages 的子目錄 ---
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const paginationBaseUrl = `${base}/blog/`
 ---
 
 <Layout class="max-w-3xl">
@@ -53,7 +56,7 @@ const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a))
   <PaginationComponent
     currentPage={page.currentPage}
     totalPages={page.lastPage}
-    baseUrl="/blog/"
+    baseUrl={paginationBaseUrl}
     client:load
   />
 </Layout>
