@@ -2,24 +2,21 @@ import type { IconMap, SocialLink, Site } from '@/types'
 
 export const SITE: Site = {
   title: 'random-talk',
-  description:
-    'astro-erudite is a opinionated, unstyled blogging template—built with Astro, Tailwind, and shadcn/ui.',
-  href: 'https://astro-erudite.vercel.app',
-  author: 'jktrn',
+  description: 'Gwen 的隨筆與筆記 — 使用 Astro 打造的個人部落格。',
+  // 建議更新為你的 GitHub Pages 網址
+  href: 'https://gwen0227.github.io/random-talk/', 
+  author: 'Gwen', // 更新為你的名字
   locale: 'en-US',
   featuredPostCount: 2,
   postsPerPage: 3,
 }
 
 export const NAV_LINKS: SocialLink[] = [
- {
-    href: '/random-talk/blog/', // 確保有專案名，且結尾有斜線
+  {
+    href: '/random-talk/blog/',
     label: 'blog',
   },
-  {
-    href: '/random-talk/authors/',
-    label: 'authors',
-  },
+  // 已移除 authors 連結
   {
     href: '/random-talk/about/',
     label: 'about',
@@ -28,19 +25,20 @@ export const NAV_LINKS: SocialLink[] = [
 
 export const SOCIAL_LINKS: SocialLink[] = [
   {
-    href: 'https://github.com/jktrn',
+    href: 'https://github.com/gwen0227', // 更新為你的 GitHub
     label: 'GitHub',
   },
-  {
-    href: 'https://twitter.com/enscry',
+  // 如果沒有 Twitter，建議移除或註釋掉
+  /* {
+    href: 'https://twitter.com/your-id',
     label: 'Twitter',
-  },
+  }, */
   {
-    href: 'mailto:jason@enscribe.dev',
+    href: 'mailto:your-email@example.com', // 更新為你的 Email
     label: 'Email',
   },
   {
-    href: '/rss.xml',
+    href: '/random-talk/rss.xml', // 確保 RSS 也有專案路徑
     label: 'RSS',
   },
 ]
