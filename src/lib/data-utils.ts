@@ -26,6 +26,13 @@ export async function getPostById(
   return allPosts.find((post) => post.id === postId) || null
 }
 
+export async function getRecentPosts(
+  count: number,
+): Promise<CollectionEntry<'blog'>[]> {
+  const posts = await getAllPosts()
+  return posts.slice(0, count)
+}
+
 // --- 分類與標籤 ---
 
 export async function getAllTags(): Promise<Map<string, number>> {
@@ -36,6 +43,18 @@ export async function getAllTags(): Promise<Map<string, number>> {
     })
     return acc
   }, new Map<string, number>())
+}
+
+export async function getSortedTags(): Promise<
+  { tag: string; count: number }[]
+> {
+  const tagCounts = await getAllTags()
+  return [...tagCounts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => {
+      const countDiff = b.count - a.count
+      return countDiff !== 0 ? countDiff : a.tag.localeCompare(b.tag)
+    })
 }
 
 export async function getPostsByTag(
@@ -175,20 +194,4 @@ export async function getTOCSections(postId: string) {
   const sections = []
   const { headings: parentHeadings } = await render(parentPost)
   if (parentHeadings.length > 0) {
-    sections.push({ type: 'parent', title: 'Overview', headings: parentHeadings })
-  }
-
-  const subposts = await getSubpostsForParent(parentId)
-  for (const subpost of subposts) {
-    const { headings } = await render(subpost)
-    if (headings.length > 0) {
-      sections.push({ type: 'subpost', title: subpost.data.title, headings, subpostId: subpost.id })
-    }
-  }
-  return sections
-}
-
-// 為了相容性保留空的 parseAuthors
-export async function parseAuthors() {
-  return []
-}
+    sections.push({ type: 'parent', title: 'Overview',
