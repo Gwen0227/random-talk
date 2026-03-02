@@ -21,16 +21,16 @@ interface Props {
 
 const { items } = Astro.props
 
-// --- 關鍵修改：獲取基礎路徑 (例如 /random-talk) ---
-const base = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL;
+// 1. 取得基礎路徑並確保結尾沒有斜線
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <Breadcrumb>
   <BreadcrumbList>
     <BreadcrumbItem>
-      <BreadcrumbLink href={`${base}/`}>
+      <a href={`${base}/`} class="hover:text-foreground transition-colors">
         <Icon name="lucide:home" class="size-4 shrink-0" />
-      </BreadcrumbLink>
+      </a>
     </BreadcrumbItem>
     {
       items.map((item, index) => (
@@ -47,15 +47,16 @@ const base = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL;
                 </span>
               </BreadcrumbPage>
             ) : (
-              /* 修正：如果 href 存在，自動補上基礎路徑 */
-              <BreadcrumbLink href={item.href ? `${base}${item.href}` : undefined}>
-                <span class="flex items-center gap-x-2">
-                  {item.icon && (
-                    <Icon name={item.icon} class="size-4 shrink-0" />
-                  )}
-                  <span>{item.label}</span>
-                </span>
-              </BreadcrumbLink>
+              /* 3. 使用原生 <a> 標籤避開其他組件的干擾 */
+              <a 
+                href={item.href ? `${base}${item.href}` : '#'} 
+                class="transition-colors hover:text-foreground flex items-center gap-x-2 text-sm"
+              >
+                {item.icon && (
+                  <Icon name={item.icon} class="size-4 shrink-0" />
+                )}
+                <span>{item.label}</span>
+              </a>
             )}
           </BreadcrumbItem>
         </>
