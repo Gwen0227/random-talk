@@ -1,5 +1,4 @@
 ---
-// 1. 保留原本的所有 import
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
 import Link from '@/components/Link.astro'
 import PostHead from '@/components/PostHead.astro'
@@ -39,7 +38,7 @@ export async function getStaticPaths() {
 const post = Astro.props
 const currentPostId = Astro.params.id as string
 
-// 使用最穩定的 render 抓取方式
+// 穩定渲染內容
 const rendered = await render(post)
 const Content = rendered.Content
 const headings = rendered.headings
@@ -53,6 +52,13 @@ const subpostCount = !isCurrentSubpost ? await getSubpostCount(currentPostId) : 
 const postReadingTime = await getPostReadingTime(currentPostId)
 const combinedReadingTime = hasChildPosts && !isCurrentSubpost ? await getCombinedReadingTime(currentPostId) : null
 const tocSections = await getTOCSections(currentPostId)
+
+// Cusdis 參數配置
+const cusdisAppId = "0cc60d4f-6bae-4446-878d-43af68445b0e"
+const cusdisHost = "https://mycusdis.vercel.app"
+const pageUrl = encodeURIComponent(Astro.url.href)
+const pageTitle = encodeURIComponent(post.data.title)
+const iframeSrc = `${cusdisHost}/api/widget?appId=${cusdisAppId}&pageId=${currentPostId}&pageUrl=${pageUrl}&pageTitle=${pageTitle}`
 ---
 
 <Layout>
@@ -76,26 +82,40 @@ const tocSections = await getTOCSections(currentPostId)
     </article>
 
     <div class="col-start-2 mt-16 pt-8 border-t border-border/40">
-      <div 
-        id="cusdis_thread"
-        data-host="https://mycusdis.vercel.app"
-        data-app-id="0cc60d4f-6bae-4446-878d-43af68445b0e"
-        data-page-id={currentPostId}
-        data-page-url={Astro.url.href}
-        data-page-title={post.data.title}
-      ></div>
+      <iframe
+        src={iframeSrc}
+        style="width: 100%; min-height: 500px; border: none; overflow: hidden;"
+        id="cusdis_iframe"
+        loading="lazy"
+      ></iframe>
 
       <script is:inline>
-        function loadCusdis() {
-          console.log('Cusdis 載入中...');
-          // 移除舊的 script 防止重複載入
-          const oldScript = document.getElementById('cusdis-js');
-          if (oldScript) oldScript.remove();
+        // 自動監聽留言板高度，防止出現內部捲軸
+        window.addEventListener('message', (e) => {
+          if (e.data && e.data.type === 'cusdis:update-height') {
+            const iframe = document.getElementById('cusdis_iframe');
+            if (iframe) {
+              iframe.style.height = e.data.data + 'px';
+            }
+          }
+        });
+      </script>
+    </div>
 
-          const script = document.createElement('script');
-          script.id = 'cusdis-js';
-          script.src = 'https://mycusdis.vercel.app/js/cusdis.es.js';
-          script.async = true;
-          script.defer = true;
-          document.body.appendChild(script);
-        }
+    <div class="col-start-2">
+        <PostNavigation newerPost={navigation.newer} olderPost={navigation.older} />
+    </div>
+  </section>
+
+  <script is:inline>
+    const ensureKatexStyles = () => {
+      if (!document.querySelector('.katex')) return
+      if (document.querySelector('link[href*="katex.min.css"]')) return
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css'
+      document.head.appendChild(link)
+    }
+    document.addEventListener('astro:page-load', ensureKatexStyles)
+  </script>
+</Layout>
