@@ -3,26 +3,29 @@
 const { pageId, pageUrl, pageTitle } = Astro.props;
 const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 
-// 💡 這裡是關鍵：將 widget 改成 iframe
-// 並且手動把 pageUrl 進行最嚴格的編碼
-const encodedUrl = encodeURIComponent(pageUrl);
-const encodedTitle = encodeURIComponent(pageTitle);
+// 💡 僅使用純粹的 iframe 請求，不載入任何外部 JS 腳本
+const query = new URLSearchParams({
+  appId: APP_ID,
+  pageId: pageId,
+  pageUrl: pageUrl,
+  pageTitle: pageTitle
+}).toString();
 
-const iframeSrc = `https://cusdis.com/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=${encodedUrl}&pageTitle=${encodedTitle}`;
+const iframeSrc = `https://cusdis.com/api/widget?${query}`;
 ---
 
-<div class="cusdis-container mt-16">
+<div class="cusdis-container mt-16 pt-8 border-t border-border/40">
   <iframe
     src={iframeSrc}
     style="width: 100%; min-height: 500px; border: 0;"
     id="cusdis-iframe"
-    title="Cusdis"
+    title="Comments"
     loading="lazy"
   ></iframe>
 </div>
 
 <script is:inline>
-  // 高度自適應
+  // 這段腳本只處理高度，不涉及外部連線，比較不會被擋
   window.addEventListener('message', (e) => {
     try {
       const data = JSON.parse(e.data);
