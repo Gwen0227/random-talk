@@ -38,86 +38,50 @@ export async function getStaticPaths() {
 
 const post = Astro.props
 const currentPostId = Astro.params.id as string
-const { Content, headings } = await render(post)
+
+// --- 這裡非常重要，確保 render 成功 ---
+const rendered = await render(post)
+const Content = rendered.Content
+const headings = rendered.headings
+// ------------------------------------
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
-
 const isCurrentSubpost = isSubpost(currentPostId)
 const navigation = await getAdjacentPosts(currentPostId)
 const parentPost = isCurrentSubpost ? await getParentPost(currentPostId) : null
-
 const hasChildPosts = await hasSubposts(currentPostId)
 const subpostCount = !isCurrentSubpost ? await getSubpostCount(currentPostId) : 0
 const postReadingTime = await getPostReadingTime(currentPostId)
-const combinedReadingTime =
-  hasChildPosts && !isCurrentSubpost
-    ? await getCombinedReadingTime(currentPostId)
-    : null
-
+const combinedReadingTime = hasChildPosts && !isCurrentSubpost ? await getCombinedReadingTime(currentPostId) : null
 const tocSections = await getTOCSections(currentPostId)
 ---
 
 <Layout>
   <PostHead slot="head" post={post} />
-  {
-    (hasChildPosts || isCurrentSubpost) && (
-      <SubpostsHeader
-        slot="subposts-navigation"
-        parentId={isCurrentSubpost ? getParentId(currentPostId) : currentPostId}
-      />
-    )
-  }
-  {
-    headings?.length > 0 &&
-      !(
-        isCurrentSubpost &&
-        headings.length === 1 &&
-        headings[0].text === post.data.title
-      ) && <TOCHeader slot="table-of-contents" headings={headings} />
-  }
-
-  <section
-    class="grid grid-cols-[minmax(0px,1fr)_min(calc(var(--breakpoint-md)-2rem),100%)_minmax(0px,1fr)] gap-y-6"
-  >
+  
+  <section class="grid grid-cols-[minmax(0px,1fr)_min(calc(var(--breakpoint-md)-2rem),100%)_minmax(0px,1fr)] gap-y-6">
+    
     <div class="col-start-2">
-      <Breadcrumbs
-        items={[
-          { href: '/blog', label: 'Blog', icon: 'lucide:library-big' },
-          ...(isCurrentSubpost && parentPost
-            ? [
-                {
-                  href: `/blog/${parentPost.id}`,
-                  label: parentPost.data.title,
-                  icon: 'lucide:book-open',
-                },
-                {
-                  href: `/blog/${currentPostId}`,
-                  label: post.data.title,
-                  icon: 'lucide:file-text',
-                },
-              ]
-            : [
-                {
-                  href: `/blog/${currentPostId}`,
-                  label: post.data.title,
-                  icon: 'lucide:book-open-text',
-                },
-              ]),
-        ]}
+       <h1 class="text-3xl font-bold mb-4">{post.data.title}</h1>
+    </div>
+
+    <article class="prose col-start-2 max-w-none">
+      <Content /> 
+    </article>
+
+    <div class="col-start-2 mt-16 pt-8 border-t border-border/40">
+      <Cusdis 
+        pageId={currentPostId} 
+        pageUrl={Astro.url.href}
+        pageTitle={post.data.title}
       />
     </div>
 
-    {
-      post.data.image && (
-        <Image
-          src={post.data.image}
-          alt={post.data.title}
-          width={1200}
-          height={630}
-          class="col-span-full mx-auto w-full max-w-5xl object-cover aspect-[21/9]"
-        />
-      )
-    }
-
-    <section class="col-start-2 flex flex-col gap-y-6 text-center">
-      <div class="flex flex-col">
+    <div class="col-start-2">
+      <PostNavigation
+        newerPost={navigation.newer}
+        olderPost={navigation.older}
+      />
+    </div>
+  </section>
+</Layout>
