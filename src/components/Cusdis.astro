@@ -1,5 +1,5 @@
 ---
-// src/components/Cusdis.astro
+// 接收來自父層的資料
 const { pageId, pageUrl, pageTitle } = Astro.props;
 ---
 
@@ -11,11 +11,20 @@ const { pageId, pageUrl, pageTitle } = Astro.props;
   data-page-url={pageUrl}
   data-page-title={pageTitle}
   class="mt-16 pt-8 border-t border-border/40"
+  style="min-height: 200px;" 
 ></div>
 
-<script>
-  // 處理 Astro 的頁面切換邏輯
-  function loadCusdis() {
+<script is:inline>
+  function initCusdis() {
+    // 1. 如果腳本已經存在，就手動重新渲染
+    if (window.CUSDIS) {
+      console.log('Cusdis 已存在，執行重新渲染');
+      window.CUSDIS.renderWidget();
+      return;
+    }
+
+    // 2. 如果腳本還不存在，則建立並插入
+    console.log('正在載入 Cusdis 腳本...');
     const script = document.createElement('script');
     script.src = 'https://mycusdis.vercel.app/js/cusdis.es.js';
     script.async = true;
@@ -23,9 +32,11 @@ const { pageId, pageUrl, pageTitle } = Astro.props;
     document.body.appendChild(script);
   }
 
-  // 第一次進入頁面時執行
-  loadCusdis();
+  // 處理第一次載入與 Astro 的 View Transitions 換頁
+  document.addEventListener('astro:page-load', initCusdis);
 
-  // 如果你有用 Astro View Transitions，切換頁面後也要重新執行
-  document.addEventListener('astro:after-swap', loadCusdis);
+  // 防呆：如果頁面已經載入完成了但腳本還沒跑
+  if (document.readyState === 'complete') {
+    initCusdis();
+  }
 </script>

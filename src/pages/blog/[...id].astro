@@ -5,6 +5,8 @@ import PostNavigation from '@/components/PostNavigation.astro'
 import SubpostsHeader from '@/components/SubpostsHeader.astro'
 import TOCHeader from '@/components/TOCHeader.astro'
 import Layout from '@/layouts/Layout.astro'
+// 💡 引入你剛改好的 Cusdis 組件
+import Cusdis from '@/components/Cusdis.astro'
 import {
   getAdjacentPosts,
   getAllPostsAndSubposts,
@@ -40,11 +42,6 @@ const navigation = await getAdjacentPosts(currentPostId)
 const parentPost = isCurrentSubpost ? await getParentPost(currentPostId) : null
 const hasChildPosts = await hasSubposts(currentPostId)
 const postReadingTime = await getPostReadingTime(currentPostId)
-const tocSections = await getTOCSections(currentPostId)
-
-// --- 留言板參數 ---
-const host = "https://mycusdis.vercel.app"
-const appId = "0cc60d4f-6bae-4446-878d-43af68445b0e"
 ---
 
 <Layout>
@@ -63,56 +60,20 @@ const appId = "0cc60d4f-6bae-4446-878d-43af68445b0e"
       <div class="text-muted-foreground mt-4 text-sm">{formatDate(post.data.date)} · {postReadingTime}</div>
     </div>
 
+    { post.data.image && (
+        <Image src={post.data.image} alt={post.data.title} width={1200} height={630} class="col-span-full mx-auto w-full max-w-5xl object-cover aspect-[21/9]" />
+    )}
+
     <article class="prose col-start-2 max-w-none">
       <Content />
     </article>
 
-    <div class="col-start-2 mt-16 pt-8 border-t border-border/40" style="min-height: 300px;">
-      <div 
-        id="cusdis_thread"
-        data-host={host}
-        data-app-id={appId}
-        data-page-id={currentPostId}
-        data-page-url={Astro.url.href}
-        data-page-title={post.data.title}
-      ></div>
-
-      <script is:inline>
-        window.loadCusdis = function() {
-          console.log("嘗試載入 Cusdis...");
-          
-          // 1. 如果已經有舊的腳本，先清除它
-          const oldScript = document.getElementById('cusdis-js');
-          if (oldScript) oldScript.remove();
-
-          // 2. 建立新腳本
-          const script = document.createElement('script');
-          script.id = 'cusdis-js';
-          script.src = 'https://mycusdis.vercel.app/js/cusdis.es.js';
-          script.async = true;
-          script.defer = true;
-          
-          // 3. 監聽載入狀況
-          script.onload = () => {
-            console.log("Cusdis 腳本載入完成");
-            if (window.CUSDIS) {
-              window.CUSDIS.renderWidget();
-            }
-          };
-
-          document.body.appendChild(script);
-        };
-
-        // 監聽 Astro 換頁事件
-        document.addEventListener('astro:page-load', window.loadCusdis);
-        
-        // 初始執行一次
-        if (document.readyState === 'complete') {
-          window.loadCusdis();
-        } else {
-          window.addEventListener('load', window.loadCusdis);
-        }
-      </script>
+    <div class="col-start-2">
+      <Cusdis 
+        pageId={currentPostId} 
+        pageUrl={Astro.url.href} 
+        pageTitle={post.data.title} 
+      />
     </div>
 
     <div class="col-start-2">
@@ -123,6 +84,10 @@ const appId = "0cc60d4f-6bae-4446-878d-43af68445b0e"
       />
     </div>
   </section>
+
+  <Button variant="outline" size="icon" className="group fixed right-8 bottom-8 z-50 hidden" id="scroll-to-top">
+    <Icon name="lucide:arrow-up" class="mx-auto size-4" />
+  </Button>
 </Layout>
 
 <script is:inline>
