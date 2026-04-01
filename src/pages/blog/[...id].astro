@@ -37,36 +37,19 @@ export async function getStaticPaths() {
 
 const post = Astro.props
 const currentPostId = Astro.params.id as string
-
-// 確保渲染成功
-const rendered = await render(post)
-const Content = rendered.Content
-const headings = rendered.headings
+const result = await render(post)
+const Content = result.Content
+const headings = result.headings
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const isCurrentSubpost = isSubpost(currentPostId)
 const navigation = await getAdjacentPosts(currentPostId)
-const parentPost = isCurrentSubpost ? await getParentPost(currentPostId) : null
 const hasChildPosts = await hasSubposts(currentPostId)
-const subpostCount = !isCurrentSubpost ? await getSubpostCount(currentPostId) : 0
 const postReadingTime = await getPostReadingTime(currentPostId)
-const combinedReadingTime = hasChildPosts && !isCurrentSubpost ? await getCombinedReadingTime(currentPostId) : null
-const tocSections = await getTOCSections(currentPostId)
-
-// --- 留言板參數安全處理 ---
-const cusdisAppId = "0cc60d4f-6bae-4446-878d-43af68445b0e"
-const cusdisHost = "https://mycusdis.vercel.app"
-// 使用 post.id 作為 pageId，並確保 URL 是安全格式
-const safePageUrl = Astro.url ? Astro.url.href : ""
-const safePageTitle = post.data.title || ""
 ---
 
 <Layout>
   <PostHead slot="head" post={post} />
-  
-  { (hasChildPosts || isCurrentSubpost) && (
-      <SubpostsHeader slot="subposts-navigation" parentId={isCurrentSubpost ? getParentId(currentPostId) : currentPostId} />
-  )}
   
   { headings?.length > 0 && <TOCHeader slot="table-of-contents" headings={headings} /> }
 
@@ -77,28 +60,30 @@ const safePageTitle = post.data.title || ""
       <div class="text-muted-foreground mt-4 text-sm">{formatDate(post.data.date)} · {postReadingTime}</div>
     </div>
 
-    { post.data.image && (
-        <Image src={post.data.image} alt={post.data.title} width={1200} height={630} class="col-span-full mx-auto w-full max-w-5xl object-cover aspect-[21/9]" />
-    )}
-
     <article class="prose col-start-2 max-w-none">
       <Content />
     </article>
 
     <div class="col-start-2 mt-16 pt-8 border-t border-border/40">
-      <iframe
-        src={`${cusdisHost}/api/widget?appId=${cusdisAppId}&pageId=${currentPostId}&pageUrl=${encodeURIComponent(safePageUrl)}&pageTitle=${encodeURIComponent(safePageTitle)}`}
-        style="width: 100%; min-height: 500px; border: none; overflow: hidden;"
-        id="cusdis_iframe"
-      ></iframe>
-
+      <div 
+        id="cusdis_thread"
+        data-host="https://mycusdis.vercel.app"
+        data-app-id="0cc60d4f-6bae-4446-878d-43af68445b0e"
+        data-page-id={currentPostId}
+        data-page-url={Astro.url.href}
+        data-page-title={post.data.title}
+      ></div>
+      
       <script is:inline>
-        window.addEventListener('message', (e) => {
-          if (e.data && e.data.type === 'cusdis:update-height') {
-            const iframe = document.getElementById('cusdis_iframe');
-            if (iframe) iframe.style.height = e.data.data + 'px';
-          }
-        });
+        function loadCusdis() {
+          const script = document.createElement('script');
+          script.src = 'https://mycusdis.vercel.app/js/cusdis.es.js';
+          script.async = true;
+          script.defer = true;
+          document.body.appendChild(script);
+        }
+        loadCusdis();
+        document.addEventListener('astro:page-load', loadCusdis);
       </script>
     </div>
 
@@ -120,12 +105,5 @@ const safePageTitle = post.data.title || ""
   document.addEventListener('astro:page-load', () => {
     const btn = document.getElementById('scroll-to-top');
     if (btn) window.addEventListener('scroll', () => btn.classList.toggle('hidden', window.scrollY <= 300));
-    
-    if (document.querySelector('.katex') && !document.querySelector('link[href*="katex.min.css"]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css';
-      document.head.appendChild(link);
-    }
   });
 </script>
