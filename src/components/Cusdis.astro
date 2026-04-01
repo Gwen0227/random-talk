@@ -10,6 +10,22 @@ const { pageId, pageUrl, pageTitle } = Astro.props;
   data-page-id={pageId}
   data-page-url={pageUrl}
   data-page-title={pageTitle}
+  class="mt-16 pt-8 border-t border-border/40"
 ></div>
 
-<script async defer src="https://mycusdis.vercel.app/js/cusdis.es.js"></script>
+<script>
+  // 處理 Astro 的頁面切換邏輯
+  function loadCusdis() {
+    const script = document.createElement('script');
+    script.src = 'https://mycusdis.vercel.app/js/cusdis.es.js';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+  }
+
+  // 第一次進入頁面時執行
+  loadCusdis();
+
+  // 如果你有用 Astro View Transitions，切換頁面後也要重新執行
+  document.addEventListener('astro:after-swap', loadCusdis);
+</script>
