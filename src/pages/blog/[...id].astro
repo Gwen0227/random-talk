@@ -37,9 +37,11 @@ export async function getStaticPaths() {
 
 const post = Astro.props
 const currentPostId = Astro.params.id as string
-const result = await render(post)
-const Content = result.Content
-const headings = result.headings
+
+// 確保渲染成功
+const rendered = await render(post)
+const Content = rendered.Content
+const headings = rendered.headings
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const isCurrentSubpost = isSubpost(currentPostId)
@@ -51,12 +53,12 @@ const postReadingTime = await getPostReadingTime(currentPostId)
 const combinedReadingTime = hasChildPosts && !isCurrentSubpost ? await getCombinedReadingTime(currentPostId) : null
 const tocSections = await getTOCSections(currentPostId)
 
-// --- Cusdis 參數 ---
-const cusdisHost = "https://mycusdis.vercel.app"
+// --- 留言板參數安全處理 ---
 const cusdisAppId = "0cc60d4f-6bae-4446-878d-43af68445b0e"
-const pageUrl = encodeURIComponent(Astro.url.href)
-const pageTitle = encodeURIComponent(post.data.title)
-const iframeSrc = `${cusdisHost}/api/widget?appId=${cusdisAppId}&pageId=${currentPostId}&pageUrl=${pageUrl}&pageTitle=${pageTitle}`
+const cusdisHost = "https://mycusdis.vercel.app"
+// 使用 post.id 作為 pageId，並確保 URL 是安全格式
+const safePageUrl = Astro.url ? Astro.url.href : ""
+const safePageTitle = post.data.title || ""
 ---
 
 <Layout>
@@ -85,20 +87,16 @@ const iframeSrc = `${cusdisHost}/api/widget?appId=${cusdisAppId}&pageId=${curren
 
     <div class="col-start-2 mt-16 pt-8 border-t border-border/40">
       <iframe
-        src={iframeSrc}
+        src={`${cusdisHost}/api/widget?appId=${cusdisAppId}&pageId=${currentPostId}&pageUrl=${encodeURIComponent(safePageUrl)}&pageTitle=${encodeURIComponent(safePageTitle)}`}
         style="width: 100%; min-height: 500px; border: none; overflow: hidden;"
         id="cusdis_iframe"
-        loading="lazy"
       ></iframe>
 
       <script is:inline>
-        // 自動調整留言板高度，防止出現內部捲軸
         window.addEventListener('message', (e) => {
           if (e.data && e.data.type === 'cusdis:update-height') {
             const iframe = document.getElementById('cusdis_iframe');
-            if (iframe) {
-              iframe.style.height = e.data.data + 'px';
-            }
+            if (iframe) iframe.style.height = e.data.data + 'px';
           }
         });
       </script>
@@ -130,4 +128,4 @@ const iframeSrc = `${cusdisHost}/api/widget?appId=${cusdisAppId}&pageId=${curren
       document.head.appendChild(link);
     }
   });
-</script
+</script>
