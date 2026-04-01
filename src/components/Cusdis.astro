@@ -1,21 +1,10 @@
 ---
 // src/components/Cusdis.astro
-const { pageId, pageUrl, pageTitle } = Astro.props;
-
-const HOST = "https://cusdis.com";
 const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 
-// 💡 強制清理網址：確保 pageUrl 不會帶有奇怪的後綴
-const cleanPageUrl = pageUrl.split('?')[0].split('#')[0];
-
-const query = new URLSearchParams({
-  appId: APP_ID,
-  pageId: pageId,
-  pageUrl: cleanPageUrl,
-  pageTitle: pageTitle
-}).toString();
-
-const iframeSrc = `${HOST}/api/widget?${query}`;
+// 💡 暴力測試：全部傳固定字串，完全不抓 Astro 的 props
+// 如果連這段都 404，那就是官方伺服器根本不認這個 appId
+const iframeSrc = `https://cusdis.com/api/widget?appId=${APP_ID}&pageId=test001&pageUrl=https://gwen0227.github.io/&pageTitle=test`;
 ---
 
 <div class="cusdis-container mt-16 pt-8 border-t border-border/40">
@@ -23,24 +12,6 @@ const iframeSrc = `${HOST}/api/widget?${query}`;
     src={iframeSrc}
     style="width: 100%; min-height: 500px; border: 0;"
     id="cusdis-iframe"
-    title="Cusdis"
-    loading="lazy"
+    title="Cusdis Test"
   ></iframe>
 </div>
-
-<script is:inline>
-  window.addEventListener('message', (e) => {
-    try {
-      const data = JSON.parse(e.data);
-      if (data.target === 'cusdis' && data.type === 'resize') {
-        const iframe = document.getElementById('cusdis-iframe');
-        if (iframe) iframe.style.height = data.data + 'px';
-      }
-    } catch (err) {}
-  });
-
-  document.addEventListener('astro:page-load', () => {
-    const iframe = document.getElementById('cusdis-iframe');
-    if (iframe) iframe.src = iframe.src;
-  });
-</script>
