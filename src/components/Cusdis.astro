@@ -2,55 +2,36 @@
 // src/components/Cusdis.astro
 const { pageId, pageUrl, pageTitle } = Astro.props;
 
-// 請確認這兩個 ID 是正確的
+// 請確認這是你的 Vercel 網址
 const HOST = "https://mycusdis.vercel.app";
 const APP_ID = "0cc60d4f-6bae-4446-878d-43af68445b0e";
+
+// 構建 iframe 的網址
+const iframeSrc = `${HOST}/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=${encodeURIComponent(pageUrl)}&pageTitle=${encodeURIComponent(pageTitle)}`;
 ---
 
-<div class="cusdis-wrapper mt-16 pt-8 border-t border-border/40">
-  <div 
-    id="cusdis_thread"
-    data-host={HOST}
-    data-app-id={APP_ID}
-    data-page-id={pageId}
-    data-page-url={pageUrl}
-    data-page-title={pageTitle}
-    style="min-height: 250px; width: 100%;"
-  ></div>
+<div class="cusdis-container mt-16 pt-8 border-t border-border/40">
+  <iframe
+    src={iframeSrc}
+    style="width: 100%; min-height: 500px; border: 0;"
+    id="cusdis-iframe"
+    title="Cusdis Comments"
+  ></iframe>
 </div>
 
 <script is:inline>
-  function loadCusdis() {
-    console.log("--- 執行 Cusdis 清潔載入程序 ---");
-    
-    // 1. 強力清除所有可能衝突的舊腳本
-    const scripts = document.querySelectorAll('script[src*="cusdis"]');
-    scripts.forEach(s => s.remove());
-
-    // 2. 建立新腳本
-    const script = document.createElement('script');
-    script.src = 'https://cusdis.com/js/cusdis.es.js'; 
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
-      console.log("✅ 腳本載入成功");
-      // 💡 關鍵修正：新版 SDK 使用 render() 而不是 renderWidget()
-      if (window.CUSDIS && typeof window.CUSDIS.render === 'function') {
-        window.CUSDIS.render(document.getElementById('cusdis_thread'));
-      } else if (window.CUSDIS && typeof window.CUSDIS.initial === 'function') {
-        window.CUSDIS.initial();
+  // 處理 iframe 自動高度 (可選，讓留言板不會有捲軸)
+  window.addEventListener('message', (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.target === 'cusdis' && data.type === 'resize') {
+        const iframe = document.getElementById('cusdis-iframe');
+        if (iframe) {
+          iframe.style.height = data.data + 'px';
+        }
       }
-    };
-
-    document.body.appendChild(script);
-  }
-
-  // 監聽 Astro 頁面加載
-  document.addEventListener('astro:page-load', loadCusdis);
-  
-  // 初始進入處理
-  if (document.readyState === 'complete') {
-    loadCusdis();
-  }
+    } catch (err) {
+      // 忽略非 JSON 訊息
+    }
+  });
 </script>
