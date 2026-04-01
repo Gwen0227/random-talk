@@ -2,27 +2,34 @@
 // src/components/Cusdis.astro
 const { pageId, pageUrl, pageTitle } = Astro.props;
 const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
+
+// 💡 這裡是關鍵：將 widget 改成 iframe
+// 並且手動把 pageUrl 進行最嚴格的編碼
+const encodedUrl = encodeURIComponent(pageUrl);
+const encodedTitle = encodeURIComponent(pageTitle);
+
+const iframeSrc = `https://cusdis.com/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=${encodedUrl}&pageTitle=${encodedTitle}`;
 ---
 
-<div class="cusdis-container mt-16 pt-8 border-t border-border/40">
-  <div 
-    id="cusdis_thread"
-    data-host="https://cusdis.com"
-    data-app-id={APP_ID}
-    data-page-id={pageId}
-    data-page-url={pageUrl}
-    data-page-title={pageTitle}
-  ></div>
+<div class="cusdis-container mt-16">
+  <iframe
+    src={iframeSrc}
+    style="width: 100%; min-height: 500px; border: 0;"
+    id="cusdis-iframe"
+    title="Cusdis"
+    loading="lazy"
+  ></iframe>
 </div>
 
-<script is:inline async src="https://cusdis.com/js/cusdis.es.js"></script>
-
 <script is:inline>
-  // 處理 Astro 的 View Transitions (換頁不刷新的功能)
-  document.addEventListener('astro:page-load', () => {
-    // 如果 Cusdis 已經加載過，強迫它重新渲染當前頁面的留言板
-    if (window.renderCusdis) {
-      window.renderCusdis(document.getElementById('cusdis_thread'));
-    }
+  // 高度自適應
+  window.addEventListener('message', (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.target === 'cusdis' && data.type === 'resize') {
+        const iframe = document.getElementById('cusdis-iframe');
+        if (iframe) iframe.style.height = data.data + 'px';
+      }
+    } catch (err) {}
   });
 </script>
