@@ -3,22 +3,21 @@
 const { pageId, pageUrl, pageTitle } = Astro.props;
 const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 
-// 💡 暴力拼接：確保網址看起來就像你在瀏覽器直接輸入那樣乾淨
-// 我們測試直接把 appId 放在最前面，且不對 pageUrl 做過度編碼
-const iframeSrc = `https://cusdis.com/api/widget?appId=${APP_ID}&pageId=${pageId}&pageUrl=${pageUrl}&pageTitle=${pageTitle}`;
+// 💡 移除所有複雜邏輯，用最原始的字串拼接
+const iframeSrc = `https://cusdis.com/api/widget?appId=${APP_ID}&pageId=${pageId}&pageUrl=${pageUrl}&pageTitle=${encodeURIComponent(pageTitle)}`;
 ---
 
 <div class="cusdis-container mt-16 pt-8 border-t border-border/40">
   <iframe
     src={iframeSrc}
-    style="width: 100%; min-height: 500px; border: 0;"
+    style="width: 100%; min-height: 300px; border: 0;"
     id="cusdis-iframe"
     title="Cusdis"
-    loading="lazy"
   ></iframe>
 </div>
 
 <script is:inline>
+  // 處理高度自適應
   window.addEventListener('message', (e) => {
     try {
       const data = JSON.parse(e.data);
@@ -27,11 +26,5 @@ const iframeSrc = `https://cusdis.com/api/widget?appId=${APP_ID}&pageId=${pageId
         if (iframe) iframe.style.height = data.data + 'px';
       }
     } catch (err) {}
-  });
-
-  // 處理 Astro 換頁刷新
-  document.addEventListener('astro:page-load', () => {
-    const iframe = document.getElementById('cusdis-iframe');
-    if (iframe) iframe.src = iframe.src;
   });
 </script>
