@@ -3,29 +3,29 @@
 const { pageId, pageUrl, pageTitle } = Astro.props;
 const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 
-// 💡 僅使用純粹的 iframe 請求，不載入任何外部 JS 腳本
+// 💡 核心改動：不要讓 pageId 帶著複雜的文章網址片段，先用最簡單的 ID 測試
+// 同時確保 pageUrl 是乾淨的
 const query = new URLSearchParams({
   appId: APP_ID,
-  pageId: pageId,
+  pageId: pageId || 'default-page', 
   pageUrl: pageUrl,
   pageTitle: pageTitle
 }).toString();
 
+// 我們換回 /api/widget，這是官方 SDK 最喜歡的路徑
 const iframeSrc = `https://cusdis.com/api/widget?${query}`;
 ---
 
 <div class="cusdis-container mt-16 pt-8 border-t border-border/40">
   <iframe
     src={iframeSrc}
-    style="width: 100%; min-height: 500px; border: 0;"
+    style="width: 100%; min-height: 300px; border: 0;"
     id="cusdis-iframe"
-    title="Comments"
-    loading="lazy"
+    title="Cusdis"
   ></iframe>
 </div>
 
 <script is:inline>
-  // 這段腳本只處理高度，不涉及外部連線，比較不會被擋
   window.addEventListener('message', (e) => {
     try {
       const data = JSON.parse(e.data);
