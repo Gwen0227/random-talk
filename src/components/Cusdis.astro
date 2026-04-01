@@ -1,42 +1,58 @@
 ---
-// 接收來自父層的資料
+// src/components/Cusdis.astro
 const { pageId, pageUrl, pageTitle } = Astro.props;
+
+// 請再次確認這兩個 ID 是否與你 Cusdis 後台一致
+const HOST = "https://mycusdis.vercel.app";
+const APP_ID = "0cc60d4f-6bae-4446-878d-43af68445b0e";
 ---
 
-<div 
-  id="cusdis_thread"
-  data-host="https://mycusdis.vercel.app"
-  data-app-id="0cc60d4f-6bae-4446-878d-43af68445b0e"
-  data-page-id={pageId}
-  data-page-url={pageUrl}
-  data-page-title={pageTitle}
-  class="mt-16 pt-8 border-t border-border/40"
-  style="min-height: 200px;" 
-></div>
+<div class="cusdis-wrapper mt-16 pt-8 border-t border-border/40">
+  <div 
+    id="cusdis_thread"
+    data-host={HOST}
+    data-app-id={APP_ID}
+    data-page-id={pageId}
+    data-page-url={pageUrl}
+    data-page-title={pageTitle}
+    style="min-height: 200px; width: 100%;"
+  ></div>
+</div>
 
 <script is:inline>
-  function initCusdis() {
-    // 1. 如果腳本已經存在，就手動重新渲染
-    if (window.CUSDIS) {
-      console.log('Cusdis 已存在，執行重新渲染');
-      window.CUSDIS.renderWidget();
-      return;
-    }
+  function loadCusdis() {
+    console.log("--- 執行 Cusdis 載入程序 ---");
+    
+    // 1. 清除舊的殘留
+    const oldScript = document.getElementById('cusdis-lib');
+    if (oldScript) oldScript.remove();
 
-    // 2. 如果腳本還不存在，則建立並插入
-    console.log('正在載入 Cusdis 腳本...');
+    // 2. 改從官方 CDN 抓取腳本，徹底解決 404 問題
     const script = document.createElement('script');
-    script.src = 'https://mycusdis.vercel.app/js/cusdis.es.js';
+    script.id = 'cusdis-lib';
+    script.src = 'https://cusdis.com/js/cusdis.es.js'; 
     script.async = true;
     script.defer = true;
+    
+    script.onload = () => {
+      console.log("✅ 腳本從官方 CDN 載入成功");
+      if (window.CUSDIS) {
+        window.CUSDIS.renderWidget();
+      }
+    };
+
+    script.onerror = () => {
+      console.error("❌ 連官方 CDN 都連不上，請檢查網路或 AdBlock");
+    };
+
     document.body.appendChild(script);
   }
 
-  // 處理第一次載入與 Astro 的 View Transitions 換頁
-  document.addEventListener('astro:page-load', initCusdis);
-
-  // 防呆：如果頁面已經載入完成了但腳本還沒跑
+  // 確保在 Astro 環境下正確執行
+  document.addEventListener('astro:page-load', loadCusdis);
+  
+  // 初始載入處理
   if (document.readyState === 'complete') {
-    initCusdis();
+    loadCusdis();
   }
 </script>
