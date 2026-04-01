@@ -2,12 +2,12 @@
 // src/components/Cusdis.astro
 const { pageId, pageUrl, pageTitle } = Astro.props;
 
-// 這是你的 Vercel 網址與剛拿到的新 ID
-const HOST = "https://mycusdis.vercel.app";
-const APP_ID = "fde510b4-8608-4e47-a00e-b47ae127f6be";
+// 💡 切換到官方穩定的伺服器，避開所有 Vercel 404 問題
+const HOST = "https://cusdis.com"; 
+const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 
-// 構建直接對接 API 的網址
-const iframeSrc = `${HOST}/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=${encodeURIComponent(pageUrl)}&pageTitle=${encodeURIComponent(pageTitle)}`;
+// 使用 iframe 直接對接官方 API
+const iframeSrc = `${HOST}/api/widget?appId=${APP_ID}&pageId=${pageId}&pageUrl=${encodeURIComponent(pageUrl)}&pageTitle=${encodeURIComponent(pageTitle)}`;
 ---
 
 <div class="cusdis-container mt-16 pt-8 border-t border-border/40">
@@ -21,7 +21,7 @@ const iframeSrc = `${HOST}/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=$
 </div>
 
 <script is:inline>
-  // 自動調整 iframe 高度，讓留言板看起來像原生的一樣
+  // 自動調整 iframe 高度，確保留言板不會出現雙重捲軸
   window.addEventListener('message', (e) => {
     try {
       const data = JSON.parse(e.data);
@@ -36,7 +36,7 @@ const iframeSrc = `${HOST}/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=$
     }
   });
 
-  // 針對 Astro View Transitions：確保切換文章頁面時，留言板會重新整理載入
+  // 針對 Astro View Transitions：確保換頁時留言板會正確刷新
   document.addEventListener('astro:page-load', () => {
     const iframe = document.getElementById('cusdis-iframe');
     if (iframe) {
