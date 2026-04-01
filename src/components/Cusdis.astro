@@ -4,7 +4,7 @@ const { pageId, pageUrl, pageTitle } = Astro.props;
 
 // 請確認這兩個值與你 Cusdis 後台完全一致
 const HOST = "https://mycusdis.vercel.app";
-const APP_ID = "0cc60d4f-6bae-4446-878d-43af68445b0e";
+const APP_ID = "bd2bcb89-9e44-4923-afa6-e94d6ad794eb";
 
 // 構建直接與 API 對接的網址
 const iframeSrc = `${HOST}/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=${encodeURIComponent(pageUrl)}&pageTitle=${encodeURIComponent(pageTitle)}`;
