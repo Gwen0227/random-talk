@@ -45,7 +45,8 @@ const postReadingTime = await getPostReadingTime(currentPostId)
 
 // 🛠️ 關鍵修正：手動構建絕對路徑，確保與 Cusdis 後台設定一致
 // 這邊加上了 /random-talk/ 子目錄路徑
-const absoluteUrl = `https://gwen0227.github.io/random-talk/blog/${currentPostId}/`;
+// 💡 嘗試移除網址末端的斜線，這通常是解決 Cusdis "Not Found" 的特效藥
+const absoluteUrl = `https://gwen0227.github.io/random-talk/blog/${currentPostId}`;
 ---
 
 <Layout>
