@@ -2,7 +2,7 @@
 // src/components/Cusdis.astro
 const { pageId, pageUrl, pageTitle } = Astro.props;
 
-// 請再次確認這兩個 ID 是否與你 Cusdis 後台一致
+// 請確認這兩個 ID 是正確的
 const HOST = "https://mycusdis.vercel.app";
 const APP_ID = "0cc60d4f-6bae-4446-878d-43af68445b0e";
 ---
@@ -15,43 +15,41 @@ const APP_ID = "0cc60d4f-6bae-4446-878d-43af68445b0e";
     data-page-id={pageId}
     data-page-url={pageUrl}
     data-page-title={pageTitle}
-    style="min-height: 200px; width: 100%;"
+    style="min-height: 250px; width: 100%;"
   ></div>
 </div>
 
 <script is:inline>
   function loadCusdis() {
-    console.log("--- 執行 Cusdis 載入程序 ---");
+    console.log("--- 執行 Cusdis 清潔載入程序 ---");
     
-    // 1. 清除舊的殘留
-    const oldScript = document.getElementById('cusdis-lib');
-    if (oldScript) oldScript.remove();
+    // 1. 強力清除所有可能衝突的舊腳本
+    const scripts = document.querySelectorAll('script[src*="cusdis"]');
+    scripts.forEach(s => s.remove());
 
-    // 2. 改從官方 CDN 抓取腳本，徹底解決 404 問題
+    // 2. 建立新腳本
     const script = document.createElement('script');
-    script.id = 'cusdis-lib';
     script.src = 'https://cusdis.com/js/cusdis.es.js'; 
     script.async = true;
     script.defer = true;
     
     script.onload = () => {
-      console.log("✅ 腳本從官方 CDN 載入成功");
-      if (window.CUSDIS) {
-        window.CUSDIS.renderWidget();
+      console.log("✅ 腳本載入成功");
+      // 💡 關鍵修正：新版 SDK 使用 render() 而不是 renderWidget()
+      if (window.CUSDIS && typeof window.CUSDIS.render === 'function') {
+        window.CUSDIS.render(document.getElementById('cusdis_thread'));
+      } else if (window.CUSDIS && typeof window.CUSDIS.initial === 'function') {
+        window.CUSDIS.initial();
       }
-    };
-
-    script.onerror = () => {
-      console.error("❌ 連官方 CDN 都連不上，請檢查網路或 AdBlock");
     };
 
     document.body.appendChild(script);
   }
 
-  // 確保在 Astro 環境下正確執行
+  // 監聽 Astro 頁面加載
   document.addEventListener('astro:page-load', loadCusdis);
   
-  // 初始載入處理
+  // 初始進入處理
   if (document.readyState === 'complete') {
     loadCusdis();
   }
