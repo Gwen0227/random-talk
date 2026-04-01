@@ -2,36 +2,61 @@
 // src/components/Cusdis.astro
 const { pageId, pageUrl, pageTitle } = Astro.props;
 
-// 請確認這是你的 Vercel 網址
 const HOST = "https://mycusdis.vercel.app";
 const APP_ID = "0cc60d4f-6bae-4446-878d-43af68445b0e";
-
-// 構建 iframe 的網址
-const iframeSrc = `${HOST}/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=${encodeURIComponent(pageUrl)}&pageTitle=${encodeURIComponent(pageTitle)}`;
 ---
 
-<div class="cusdis-container mt-16 pt-8 border-t border-border/40">
-  <iframe
-    src={iframeSrc}
-    style="width: 100%; min-height: 500px; border: 0;"
-    id="cusdis-iframe"
-    title="Cusdis Comments"
-  ></iframe>
+<div class="cusdis-wrapper mt-16 pt-8 border-t border-border/40">
+  <div 
+    id="cusdis_thread"
+    data-host={HOST}
+    data-app-id={APP_ID}
+    data-page-id={pageId}
+    data-page-url={pageUrl}
+    data-page-title={pageTitle}
+    style="min-height: 300px; width: 100%;"
+  ></div>
 </div>
 
 <script is:inline>
-  // 處理 iframe 自動高度 (可選，讓留言板不會有捲軸)
-  window.addEventListener('message', (e) => {
-    try {
-      const data = JSON.parse(e.data);
-      if (data.target === 'cusdis' && data.type === 'resize') {
-        const iframe = document.getElementById('cusdis-iframe');
-        if (iframe) {
-          iframe.style.height = data.data + 'px';
+  function initCusdis() {
+    console.log("--- 啟動 Cusdis 手動修復程序 ---");
+
+    // 1. 徹底清除全域變數，防止重複宣告錯誤 (SyntaxError)
+    // 雖然無法直接刪除 const，但我們可以讓新腳本載入前清空容器
+    const container = document.getElementById('cusdis_thread');
+    if (container) container.innerHTML = '';
+
+    // 2. 移除所有舊的 Cusdis 相關腳本
+    document.querySelectorAll('script[src*="cusdis"]').forEach(s => s.remove());
+
+    // 3. 重新建立腳本
+    const script = document.createElement('script');
+    // 使用官方 CDN 避免你的 Vercel 404 檔案遺失問題
+    script.src = 'https://cusdis.com/js/cusdis.es.js'; 
+    script.async = true;
+    script.id = 'cusdis-lib-final';
+    
+    script.onload = () => {
+      console.log("✅ 腳本加載完成，正在渲染...");
+      if (window.CUSDIS) {
+        // 針對 Astro View Transitions 的手動觸發
+        if (typeof window.CUSDIS.initial === 'function') {
+          window.CUSDIS.initial();
+        } else if (typeof window.CUSDIS.render === 'function') {
+          window.CUSDIS.render(document.getElementById('cusdis_thread'));
         }
       }
-    } catch (err) {
-      // 忽略非 JSON 訊息
-    }
-  });
+    };
+
+    document.body.appendChild(script);
+  }
+
+  // 監聽 Astro 轉場事件
+  document.addEventListener('astro:page-load', initCusdis);
+
+  // 第一次進入頁面執行
+  if (document.readyState === 'complete') {
+    initCusdis();
+  }
 </script>
