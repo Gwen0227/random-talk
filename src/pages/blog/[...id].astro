@@ -1,23 +1,16 @@
 ---
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
-import Link from '@/components/Link.astro'
 import PostHead from '@/components/PostHead.astro'
 import PostNavigation from '@/components/PostNavigation.astro'
 import SubpostsHeader from '@/components/SubpostsHeader.astro'
-import SubpostsSidebar from '@/components/SubpostsSidebar.astro'
 import TOCHeader from '@/components/TOCHeader.astro'
-import TOCSidebar from '@/components/TOCSidebar.astro'
-import { badgeVariants } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import Layout from '@/layouts/Layout.astro'
 import {
   getAdjacentPosts,
   getAllPostsAndSubposts,
-  getCombinedReadingTime,
   getParentId,
   getParentPost,
   getPostReadingTime,
-  getSubpostCount,
   getTOCSections,
   hasSubposts,
   isSubpost,
@@ -26,6 +19,7 @@ import { formatDate } from '@/lib/utils'
 import { Icon } from 'astro-icon/components'
 import { Image } from 'astro:assets'
 import { render } from 'astro:content'
+import { Button } from '@/components/ui/button'
 
 export async function getStaticPaths() {
   const posts = await getAllPostsAndSubposts()
@@ -41,15 +35,24 @@ const result = await render(post)
 const Content = result.Content
 const headings = result.headings
 
-const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const isCurrentSubpost = isSubpost(currentPostId)
 const navigation = await getAdjacentPosts(currentPostId)
+const parentPost = isCurrentSubpost ? await getParentPost(currentPostId) : null
 const hasChildPosts = await hasSubposts(currentPostId)
 const postReadingTime = await getPostReadingTime(currentPostId)
+const tocSections = await getTOCSections(currentPostId)
+
+// --- 留言板參數 ---
+const host = "https://mycusdis.vercel.app"
+const appId = "0cc60d4f-6bae-4446-878d-43af68445b0e"
 ---
 
 <Layout>
   <PostHead slot="head" post={post} />
+  
+  { (hasChildPosts || isCurrentSubpost) && (
+      <SubpostsHeader slot="subposts-navigation" parentId={isCurrentSubpost ? getParentId(currentPostId) : currentPostId} />
+  )}
   
   { headings?.length > 0 && <TOCHeader slot="table-of-contents" headings={headings} /> }
 
@@ -64,26 +67,51 @@ const postReadingTime = await getPostReadingTime(currentPostId)
       <Content />
     </article>
 
-    <div class="col-start-2 mt-16 pt-8 border-t border-border/40">
+    <div class="col-start-2 mt-16 pt-8 border-t border-border/40" style="min-height: 300px;">
       <div 
         id="cusdis_thread"
-        data-host="https://mycusdis.vercel.app"
-        data-app-id="0cc60d4f-6bae-4446-878d-43af68445b0e"
+        data-host={host}
+        data-app-id={appId}
         data-page-id={currentPostId}
         data-page-url={Astro.url.href}
         data-page-title={post.data.title}
       ></div>
-      
+
       <script is:inline>
-        function loadCusdis() {
+        window.loadCusdis = function() {
+          console.log("嘗試載入 Cusdis...");
+          
+          // 1. 如果已經有舊的腳本，先清除它
+          const oldScript = document.getElementById('cusdis-js');
+          if (oldScript) oldScript.remove();
+
+          // 2. 建立新腳本
           const script = document.createElement('script');
+          script.id = 'cusdis-js';
           script.src = 'https://mycusdis.vercel.app/js/cusdis.es.js';
           script.async = true;
           script.defer = true;
+          
+          // 3. 監聽載入狀況
+          script.onload = () => {
+            console.log("Cusdis 腳本載入完成");
+            if (window.CUSDIS) {
+              window.CUSDIS.renderWidget();
+            }
+          };
+
           document.body.appendChild(script);
+        };
+
+        // 監聽 Astro 換頁事件
+        document.addEventListener('astro:page-load', window.loadCusdis);
+        
+        // 初始執行一次
+        if (document.readyState === 'complete') {
+          window.loadCusdis();
+        } else {
+          window.addEventListener('load', window.loadCusdis);
         }
-        loadCusdis();
-        document.addEventListener('astro:page-load', loadCusdis);
       </script>
     </div>
 
@@ -95,10 +123,6 @@ const postReadingTime = await getPostReadingTime(currentPostId)
       />
     </div>
   </section>
-
-  <Button variant="outline" size="icon" className="group fixed right-8 bottom-8 z-50 hidden" id="scroll-to-top">
-    <Icon name="lucide:arrow-up" class="mx-auto size-4" />
-  </Button>
 </Layout>
 
 <script is:inline>
