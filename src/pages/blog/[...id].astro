@@ -37,11 +37,7 @@ export async function getStaticPaths() {
 
 const post = Astro.props
 const currentPostId = Astro.params.id as string
-
-// 穩定渲染內容
-const rendered = await render(post)
-const Content = rendered.Content
-const headings = rendered.headings
+const { Content, headings } = await render(post)
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const isCurrentSubpost = isSubpost(currentPostId)
@@ -52,13 +48,6 @@ const subpostCount = !isCurrentSubpost ? await getSubpostCount(currentPostId) : 
 const postReadingTime = await getPostReadingTime(currentPostId)
 const combinedReadingTime = hasChildPosts && !isCurrentSubpost ? await getCombinedReadingTime(currentPostId) : null
 const tocSections = await getTOCSections(currentPostId)
-
-// Cusdis 參數配置
-const cusdisAppId = "0cc60d4f-6bae-4446-878d-43af68445b0e"
-const cusdisHost = "https://mycusdis.vercel.app"
-const pageUrl = encodeURIComponent(Astro.url.href)
-const pageTitle = encodeURIComponent(post.data.title)
-const iframeSrc = `${cusdisHost}/api/widget?appId=${cusdisAppId}&pageId=${currentPostId}&pageUrl=${pageUrl}&pageTitle=${pageTitle}`
 ---
 
 <Layout>
@@ -82,40 +71,46 @@ const iframeSrc = `${cusdisHost}/api/widget?appId=${cusdisAppId}&pageId=${curren
     </article>
 
     <div class="col-start-2 mt-16 pt-8 border-t border-border/40">
-      <iframe
-        src={iframeSrc}
-        style="width: 100%; min-height: 500px; border: none; overflow: hidden;"
-        id="cusdis_iframe"
-        loading="lazy"
-      ></iframe>
-
+      <div 
+        id="cusdis_thread"
+        data-host="https://mycusdis.vercel.app"
+        data-app-id="0cc60d4f-6bae-4446-878d-43af68445b0e"
+        data-page-id={currentPostId}
+        data-page-url={Astro.url.href}
+        data-page-title={post.data.title}
+      ></div>
       <script is:inline>
-        // 自動監聽留言板高度，防止出現內部捲軸
-        window.addEventListener('message', (e) => {
-          if (e.data && e.data.type === 'cusdis:update-height') {
-            const iframe = document.getElementById('cusdis_iframe');
-            if (iframe) {
-              iframe.style.height = e.data.data + 'px';
-            }
-          }
-        });
+        function initCusdis() {
+          const script = document.createElement('script');
+          script.src = 'https://mycusdis.vercel.app/js/cusdis.es.js';
+          script.async = true;
+          script.defer = true;
+          document.body.appendChild(script);
+        }
+        // 第一次載入與 Astro 換頁後都執行
+        initCusdis();
+        document.addEventListener('astro:page-load', initCusdis);
       </script>
     </div>
 
-    <div class="col-start-2">
-        <PostNavigation newerPost={navigation.newer} olderPost={navigation.older} />
+    <div class="col-start-2 mt-8">
+      <PostNavigation
+        newerPost={navigation.newer}
+        olderPost={navigation.older}
+        parentPost={isCurrentSubpost ? navigation.parent : undefined}
+      />
     </div>
   </section>
-
-  <script is:inline>
-    const ensureKatexStyles = () => {
-      if (!document.querySelector('.katex')) return
-      if (document.querySelector('link[href*="katex.min.css"]')) return
-      const link = document.createElement('link')
-      link.rel = 'stylesheet'
-      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css'
-      document.head.appendChild(link)
-    }
-    document.addEventListener('astro:page-load', ensureKatexStyles)
-  </script>
 </Layout>
+
+<script is:inline>
+  const ensureKatexStyles = () => {
+    if (!document.querySelector('.katex')) return
+    if (document.querySelector('link[href*="katex.min.css"]')) return
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css'
+    document.head.appendChild(link)
+  }
+  document.addEventListener('astro:page-load', ensureKatexStyles)
+</script>
