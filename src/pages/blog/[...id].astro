@@ -37,12 +37,9 @@ export async function getStaticPaths() {
 
 const post = Astro.props
 const currentPostId = Astro.params.id as string
-
-// --- 強化渲染邏輯，防止內文消失 ---
 const result = await render(post)
 const Content = result.Content
 const headings = result.headings
-// -----------------------------
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const isCurrentSubpost = isSubpost(currentPostId)
@@ -53,6 +50,13 @@ const subpostCount = !isCurrentSubpost ? await getSubpostCount(currentPostId) : 
 const postReadingTime = await getPostReadingTime(currentPostId)
 const combinedReadingTime = hasChildPosts && !isCurrentSubpost ? await getCombinedReadingTime(currentPostId) : null
 const tocSections = await getTOCSections(currentPostId)
+
+// --- Cusdis 參數 ---
+const cusdisHost = "https://mycusdis.vercel.app"
+const cusdisAppId = "0cc60d4f-6bae-4446-878d-43af68445b0e"
+const pageUrl = encodeURIComponent(Astro.url.href)
+const pageTitle = encodeURIComponent(post.data.title)
+const iframeSrc = `${cusdisHost}/api/widget?appId=${cusdisAppId}&pageId=${currentPostId}&pageUrl=${pageUrl}&pageTitle=${pageTitle}`
 ---
 
 <Layout>
@@ -80,15 +84,24 @@ const tocSections = await getTOCSections(currentPostId)
     </article>
 
     <div class="col-start-2 mt-16 pt-8 border-t border-border/40">
-      <div 
-        id="cusdis_thread"
-        data-host="https://mycusdis.vercel.app"
-        data-app-id="0cc60d4f-6bae-4446-878d-43af68445b0e"
-        data-page-id={currentPostId}
-        data-page-url={Astro.url.href}
-        data-page-title={post.data.title}
-      ></div>
-      <script is:inline src="https://mycusdis.vercel.app/js/cusdis.es.js"></script>
+      <iframe
+        src={iframeSrc}
+        style="width: 100%; min-height: 500px; border: none; overflow: hidden;"
+        id="cusdis_iframe"
+        loading="lazy"
+      ></iframe>
+
+      <script is:inline>
+        // 自動調整留言板高度，防止出現內部捲軸
+        window.addEventListener('message', (e) => {
+          if (e.data && e.data.type === 'cusdis:update-height') {
+            const iframe = document.getElementById('cusdis_iframe');
+            if (iframe) {
+              iframe.style.height = e.data.data + 'px';
+            }
+          }
+        });
+      </script>
     </div>
 
     <div class="col-start-2">
@@ -106,7 +119,6 @@ const tocSections = await getTOCSections(currentPostId)
 </Layout>
 
 <script is:inline>
-  // 處理滾動與 KaTeX
   document.addEventListener('astro:page-load', () => {
     const btn = document.getElementById('scroll-to-top');
     if (btn) window.addEventListener('scroll', () => btn.classList.toggle('hidden', window.scrollY <= 300));
@@ -118,4 +130,4 @@ const tocSections = await getTOCSections(currentPostId)
       document.head.appendChild(link);
     }
   });
-</script>
+</script
