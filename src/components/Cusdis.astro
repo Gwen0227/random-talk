@@ -1,0 +1,15 @@
+---
+// src/components/Cusdis.astro
+const { pageId, pageUrl, pageTitle } = Astro.props;
+---
+
+<div 
+  id="cusdis_thread"
+  data-host="https://mycusdis.vercel.app"
+  data-app-id="0cc60d4f-6bae-4446-878d-43af68445b0e"
+  data-page-id={pageId}
+  data-page-url={pageUrl}
+  data-page-title={pageTitle}
+></div>
+
+<script async defer src="https://mycusdis.vercel.app/js/cusdis.es.js"></script>

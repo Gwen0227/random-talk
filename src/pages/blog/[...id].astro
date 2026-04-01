@@ -1,4 +1,5 @@
 ---
+import Cusdis from '@/components/Cusdis.astro'
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
 import Link from '@/components/Link.astro'
 import PostHead from '@/components/PostHead.astro'
@@ -39,7 +40,6 @@ const post = Astro.props
 const currentPostId = Astro.params.id as string
 const { Content, headings } = await render(post)
 
-// 關鍵修改：獲取基礎路徑，修復麵包屑 404
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 
 const isCurrentSubpost = isSubpost(currentPostId)
@@ -47,9 +47,7 @@ const navigation = await getAdjacentPosts(currentPostId)
 const parentPost = isCurrentSubpost ? await getParentPost(currentPostId) : null
 
 const hasChildPosts = await hasSubposts(currentPostId)
-const subpostCount = !isCurrentSubpost
-  ? await getSubpostCount(currentPostId)
-  : 0
+const subpostCount = !isCurrentSubpost ? await getSubpostCount(currentPostId) : 0
 const postReadingTime = await getPostReadingTime(currentPostId)
 const combinedReadingTime =
   hasChildPosts && !isCurrentSubpost
@@ -123,176 +121,3 @@ const tocSections = await getTOCSections(currentPostId)
 
     <section class="col-start-2 flex flex-col gap-y-6 text-center">
       <div class="flex flex-col">
-        <h1
-          class="mb-2 scroll-mt-31 text-3xl leading-tight font-medium sm:text-4xl"
-          id="post-title"
-        >
-          {post.data.title}
-        </h1>
-
-        <div
-          class="text-muted-foreground divide-border mb-4 flex flex-col items-center justify-center divide-y text-xs sm:flex-row sm:flex-wrap sm:divide-x sm:divide-y-0 sm:text-sm"
-        >
-          <div
-            class="flex w-full items-center justify-center gap-2 py-2 sm:w-fit sm:px-2 sm:py-0 first:sm:pl-0 last:sm:pr-0"
-          >
-            <span>{formatDate(post.data.date)}</span>
-          </div>
-
-          <div
-            class="flex w-full items-center justify-center gap-2 py-2 sm:w-fit sm:px-2 sm:py-0 first:sm:pl-0 last:sm:pr-0"
-          >
-            <span>
-              {postReadingTime}
-              {
-                combinedReadingTime &&
-                  combinedReadingTime !== postReadingTime && (
-                    <span class="text-muted-foreground">
-                      {' '}
-                      ({combinedReadingTime} total)
-                    </span>
-                  )
-              }
-            </span>
-          </div>
-
-          {
-            subpostCount > 0 && (
-              <div class="flex w-full items-center justify-center gap-1 py-2 sm:w-fit sm:px-2 sm:py-0 first:sm:pl-0 last:sm:pr-0">
-                <Icon name="lucide:file-text" class="size-3" />
-                {subpostCount} subpost{subpostCount === 1 ? '' : 's'}
-              </div>
-            )
-          }
-        </div>
-        <div class="flex flex-wrap justify-center gap-2">
-          {
-            post.data.tags &&
-              post.data.tags.length > 0 &&
-              post.data.tags.map((tag) => (
-                <a
-                  href={`${base}/tags/${tag}`}
-                  class={badgeVariants({ variant: 'muted' })}
-                >
-                  <Icon name="lucide:hash" class="size-3" />
-                  {tag}
-                </a>
-              ))
-          }
-        </div>
-      </div>
-
-      <PostNavigation
-        newerPost={navigation.newer}
-        olderPost={navigation.older}
-        parentPost={isCurrentSubpost ? navigation.parent : undefined}
-      />
-    </section>
-
-    {
-      tocSections.length > 0 && (
-        <TOCSidebar sections={tocSections} currentPostId={currentPostId} />
-      )
-    }
-
-    <article class="prose col-start-2 max-w-none">
-      <Content />
-
-      {post.data.pollId && (
-      <div style={{ 
-        width: '100%', 
-        height: '340px', 
-        overflow: 'hidden', 
-        border: '1px solid #e5e7eb', 
-        borderRadius: '16px',
-        position: 'relative',
-        marginTop: '3rem',
-        marginBottom: '2rem'
-      }}>
-      <iframe 
-       src={`https://strawpoll.com/embed/${post.data.pollId}`} 
-       style={{ 
-       width: '100%', 
-       height: '500px', 
-       border: 'none', 
-       position: 'absolute', 
-       top: '-65px', 
-       left: '0' 
-       }} 
-       allowfullscreen 
-       />
-    </div>
-  )}
-     
-    </article>
-
-    {
-      (hasChildPosts || isCurrentSubpost) && (
-        <SubpostsSidebar
-          parentId={
-            isCurrentSubpost ? getParentId(currentPostId) : currentPostId
-          }
-          className="w-64"
-        />
-      )
-    }
-
-    <PostNavigation
-      newerPost={navigation.newer}
-      olderPost={navigation.older}
-      parentPost={isCurrentSubpost ? navigation.parent : undefined}
-    />
-  </section>
-
-  <Button
-    variant="outline"
-    size="icon"
-    className="group fixed right-8 bottom-8 z-50 hidden"
-    id="scroll-to-top"
-    title="Scroll to top"
-    aria-label="Scroll to top"
-  >
-    <Icon
-      name="lucide:arrow-up"
-      class="mx-auto size-4 transition-all group-hover:-translate-y-0.5"
-    />
-  </Button>
-
-  <script>
-    document.addEventListener('astro:page-load', () => {
-      const scrollToTopButton = document.getElementById('scroll-to-top')
-      const footer = document.querySelector('footer')
-
-      if (scrollToTopButton && footer) {
-        scrollToTopButton.addEventListener('click', () => {
-          window.scrollTo({ top: 0, behavior: 'smooth' })
-        })
-
-        window.addEventListener('scroll', () => {
-          const footerRect = footer.getBoundingClientRect()
-          const isFooterVisible = footerRect.top <= window.innerHeight
-
-          scrollToTopButton.classList.toggle(
-            'hidden',
-            window.scrollY <= 300 || isFooterVisible,
-          )
-        })
-      }
-    })
-  </script>
-</Layout>
-
-<script>
-  const ensureKatexStyles = () => {
-    if (!document.querySelector('.katex')) return
-    if (document.querySelector('link[href*="katex.min.css"]')) return
-
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css'
-    document.head.appendChild(link)
-  }
-
-  document.addEventListener('astro:page-load', ensureKatexStyles)
-  document.addEventListener('astro:after-swap', ensureKatexStyles)
-</script>
