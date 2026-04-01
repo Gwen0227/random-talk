@@ -1,97 +1,36 @@
 ---
-import Breadcrumbs from '@/components/Breadcrumbs.astro'
-import Link from '@/components/Link.astro'
-import PostHead from '@/components/PostHead.astro'
-import PostNavigation from '@/components/PostNavigation.astro'
-import SubpostsHeader from '@/components/SubpostsHeader.astro'
-import SubpostsSidebar from '@/components/SubpostsSidebar.astro'
-import TOCHeader from '@/components/TOCHeader.astro'
-import TOCSidebar from '@/components/TOCSidebar.astro'
-import { badgeVariants } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import Layout from '@/layouts/Layout.astro'
-import {
-  getAdjacentPosts,
-  getAllPostsAndSubposts,
-  getCombinedReadingTime,
-  getParentId,
-  getParentPost,
-  getPostReadingTime,
-  getSubpostCount,
-  getTOCSections,
-  hasSubposts,
-  isSubpost,
-} from '@/lib/data-utils'
-import { formatDate } from '@/lib/utils'
-import { Icon } from 'astro-icon/components'
-import { Image } from 'astro:assets'
+// 前面的 import 全部保留，不要動
 import { render } from 'astro:content'
-
-export async function getStaticPaths() {
-  const posts = await getAllPostsAndSubposts()
-  return posts.map((post) => ({
-    params: { id: post.id },
-    props: post,
-  }))
-}
+// ... 其他 import
 
 const post = Astro.props
 const currentPostId = Astro.params.id as string
 const { Content, headings } = await render(post)
-
-const base = import.meta.env.BASE_URL.replace(/\/$/, '')
-const isCurrentSubpost = isSubpost(currentPostId)
 const navigation = await getAdjacentPosts(currentPostId)
-const parentPost = isCurrentSubpost ? await getParentPost(currentPostId) : null
-const hasChildPosts = await hasSubposts(currentPostId)
-const subpostCount = !isCurrentSubpost ? await getSubpostCount(currentPostId) : 0
-const postReadingTime = await getPostReadingTime(currentPostId)
-const combinedReadingTime = hasChildPosts && !isCurrentSubpost ? await getCombinedReadingTime(currentPostId) : null
-const tocSections = await getTOCSections(currentPostId)
+const isCurrentSubpost = isSubpost(currentPostId)
+// ... 其他變數定義
 ---
 
 <Layout>
   <PostHead slot="head" post={post} />
   
-  { (hasChildPosts || isCurrentSubpost) && (
-      <SubpostsHeader slot="subposts-navigation" parentId={isCurrentSubpost ? getParentId(currentPostId) : currentPostId} />
-  )}
-  
-  { headings?.length > 0 && <TOCHeader slot="table-of-contents" headings={headings} /> }
-
   <section class="grid grid-cols-[minmax(0px,1fr)_min(calc(var(--breakpoint-md)-2rem),100%)_minmax(0px,1fr)] gap-y-6">
-    <div class="col-start-2">
-      <Breadcrumbs items={[{ href: '/blog', label: 'Blog', icon: 'lucide:library-big' }, { href: `/blog/${currentPostId}`, label: post.data.title, icon: 'lucide:book-open-text' }]} />
-      <h1 class="mt-6 text-3xl font-bold sm:text-4xl">{post.data.title}</h1>
-      <div class="text-muted-foreground mt-4 text-sm">{formatDate(post.data.date)} · {postReadingTime}</div>
-    </div>
-
+    
     <article class="prose col-start-2 max-w-none">
       <Content />
-    </article>
 
-    <div class="col-start-2 mt-16 pt-8 border-t border-border/40">
-      <div 
-        id="cusdis_thread"
-        data-host="https://mycusdis.vercel.app"
-        data-app-id="0cc60d4f-6bae-4446-878d-43af68445b0e"
-        data-page-id={currentPostId}
-        data-page-url={Astro.url.href}
-        data-page-title={post.data.title}
-      ></div>
-      <script is:inline>
-        function initCusdis() {
-          const script = document.createElement('script');
-          script.src = 'https://mycusdis.vercel.app/js/cusdis.es.js';
-          script.async = true;
-          script.defer = true;
-          document.body.appendChild(script);
-        }
-        // 第一次載入與 Astro 換頁後都執行
-        initCusdis();
-        document.addEventListener('astro:page-load', initCusdis);
-      </script>
-    </div>
+      <div class="mt-16 pt-8 border-t border-border/40">
+        <div 
+          id="cusdis_thread"
+          data-host="https://mycusdis.vercel.app"
+          data-app-id="0cc60d4f-6bae-4446-878d-43af68445b0e"
+          data-page-id={currentPostId}
+          data-page-url={Astro.url.href}
+          data-page-title={post.data.title}
+        ></div>
+        <script async defer src="https://mycusdis.vercel.app/js/cusdis.es.js"></script>
+      </div>
+    </article>
 
     <div class="col-start-2 mt-8">
       <PostNavigation
@@ -102,15 +41,3 @@ const tocSections = await getTOCSections(currentPostId)
     </div>
   </section>
 </Layout>
-
-<script is:inline>
-  const ensureKatexStyles = () => {
-    if (!document.querySelector('.katex')) return
-    if (document.querySelector('link[href*="katex.min.css"]')) return
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css'
-    document.head.appendChild(link)
-  }
-  document.addEventListener('astro:page-load', ensureKatexStyles)
-</script>
