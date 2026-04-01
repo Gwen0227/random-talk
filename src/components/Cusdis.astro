@@ -1,46 +1,12 @@
 ---
 // src/components/Cusdis.astro
 const { pageId, pageUrl, pageTitle } = Astro.props;
-
-// 💡 切換到官方穩定的伺服器，避開所有 Vercel 404 問題
-const HOST = "https://cusdis.com"; 
 const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 
-// 使用 iframe 直接對接官方 API
-const iframeSrc = `${HOST}/api/widget?appId=${APP_ID}&pageId=${pageId}&pageUrl=${encodeURIComponent(pageUrl)}&pageTitle=${encodeURIComponent(pageTitle)}`;
+// 💡 實驗：只傳 appId，看看官方伺服器會不會給過
+const iframeSrc = `https://cusdis.com/api/widget?appId=${APP_ID}&pageId=test&pageUrl=https://gwen0227.github.io/&pageTitle=test`;
 ---
 
-<div class="cusdis-container mt-16 pt-8 border-t border-border/40">
-  <iframe
-    src={iframeSrc}
-    style="width: 100%; min-height: 500px; border: 0;"
-    id="cusdis-iframe"
-    title="Cusdis Comments"
-    loading="lazy"
-  ></iframe>
+<div class="cusdis-container">
+  <iframe src={iframeSrc} style="width: 100%; min-height: 500px; border: 0;"></iframe>
 </div>
-
-<script is:inline>
-  // 自動調整 iframe 高度，確保留言板不會出現雙重捲軸
-  window.addEventListener('message', (e) => {
-    try {
-      const data = JSON.parse(e.data);
-      if (data.target === 'cusdis' && data.type === 'resize') {
-        const iframe = document.getElementById('cusdis-iframe');
-        if (iframe) {
-          iframe.style.height = data.data + 'px';
-        }
-      }
-    } catch (err) {
-      // 忽略非 Cusdis 的訊息
-    }
-  });
-
-  // 針對 Astro View Transitions：確保換頁時留言板會正確刷新
-  document.addEventListener('astro:page-load', () => {
-    const iframe = document.getElementById('cusdis-iframe');
-    if (iframe) {
-      iframe.src = iframe.src;
-    }
-  });
-</script>
