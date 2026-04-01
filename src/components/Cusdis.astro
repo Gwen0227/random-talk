@@ -2,11 +2,11 @@
 // src/components/Cusdis.astro
 const { pageId, pageUrl, pageTitle } = Astro.props;
 
-// 請確認這兩個值與你 Cusdis 後台完全一致
+// 這是你的 Vercel 網址與剛拿到的新 ID
 const HOST = "https://mycusdis.vercel.app";
-const APP_ID = "bd2bcb89-9e44-4923-afa6-e94d6ad794eb";
+const APP_ID = "fde510b4-8608-4e47-a00e-b47ae127f6be";
 
-// 構建直接與 API 對接的網址
+// 構建直接對接 API 的網址
 const iframeSrc = `${HOST}/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=${encodeURIComponent(pageUrl)}&pageTitle=${encodeURIComponent(pageTitle)}`;
 ---
 
@@ -21,7 +21,7 @@ const iframeSrc = `${HOST}/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=$
 </div>
 
 <script is:inline>
-  // 處理 iframe 的高度自適應，讓留言板不會出現雙重捲軸
+  // 自動調整 iframe 高度，讓留言板看起來像原生的一樣
   window.addEventListener('message', (e) => {
     try {
       const data = JSON.parse(e.data);
@@ -32,15 +32,14 @@ const iframeSrc = `${HOST}/api/iframe?appId=${APP_ID}&pageId=${pageId}&pageUrl=$
         }
       }
     } catch (err) {
-      // 忽略非 JSON 或非 Cusdis 的訊息
+      // 忽略非 Cusdis 的訊息
     }
   });
 
-  // 針對 Astro View Transitions：確保換頁時 iframe 會重新載入
+  // 針對 Astro View Transitions：確保切換文章頁面時，留言板會重新整理載入
   document.addEventListener('astro:page-load', () => {
     const iframe = document.getElementById('cusdis-iframe');
     if (iframe) {
-      // 強制刷新 iframe 確保抓到正確文章的留言
       iframe.src = iframe.src;
     }
   });
