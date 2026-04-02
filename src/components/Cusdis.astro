@@ -15,21 +15,29 @@ const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 
 <script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
 
+<script is:inline>
+  // 🔥 關鍵：讓 iframe 高度自動跟內容同步
+  window.addEventListener('message', (e) => {
+    if (!e.data) return;
+
+    try {
+      const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+
+      if (data?.type === 'resize' && data?.height) {
+        const iframe = document.querySelector('#cusdis_thread iframe');
+        if (iframe) {
+          iframe.style.height = data.height + 'px';
+        }
+      }
+    } catch (err) {}
+  });
+</script>
+
 <style>
-  /* 🚨 重點：不要限制高度 */
-  #cusdis_thread {
+  /* 保底避免多餘滾動 */
+  #cusdis_thread iframe {
     width: 100%;
-  }
-
-  /* 🚨 強制 Cusdis 自己撐開 */
-  #cusdis_thread > div {
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  /* 🚨 防止內層滾動 */
-  #cusdis_thread * {
-    max-height: none !important;
+    border: none;
+    display: block;
   }
 </style>
