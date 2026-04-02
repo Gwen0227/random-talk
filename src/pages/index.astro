@@ -4,12 +4,14 @@ import PageHead from '@/components/PageHead.astro'
 import { SITE } from '@/consts'
 import Layout from '@/layouts/Layout.astro'
 import { getAllPosts } from '@/lib/data-utils'
+import { supabase } from '../lib/supabase'
 
 // 1. 獲取所有文章並設定分頁邏輯
 const allPosts = await getAllPosts()
 const postsPerPage = SITE.postsPerPage || 5
 const initialPosts = allPosts.slice(0, postsPerPage)
 const totalPages = Math.ceil(allPosts.length / postsPerPage)
+const { data, error } = await supabase.from("todos").select('*')
 
 // 移除原本報錯的 latestPosts，直接統一使用 initialPosts 作為初始顯示
 ---
@@ -121,3 +123,8 @@ const totalPages = Math.ceil(allPosts.length / postsPerPage)
 
   document.addEventListener('astro:page-load', setupInfiniteScroll);
 </script>
+<ul>
+10      {data.map((entry) => (
+11        <li>{entry.name}</li>
+12      ))}
+13    </ul>
