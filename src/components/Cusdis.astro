@@ -16,38 +16,50 @@ const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 <script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
 
 <script is:inline>
-  // ✅ 自動調整高度（加 buffer 避免出現 scrollbar）
-  window.addEventListener('message', (e) => {
-    if (!e.data) return;
+  function setCusdisTheme() {
+    const thread = document.getElementById('cusdis_thread');
+    if (!thread) return;
 
+    const isDark = document.documentElement.classList.contains('dark');
+    thread.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
+    if (window.CUSDIS) {
+      window.CUSDIS.renderTo(thread);
+    }
+  }
+
+  // 初始
+  setCusdisTheme();
+
+  // 監聽 dark mode 切換
+  const observer = new MutationObserver(() => {
+    setCusdisTheme();
+  });
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+
+  // ✅ 加上 resize（方案2）
+  window.addEventListener('message', (e) => {
     try {
       const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
 
       if (data?.type === 'resize' && data?.height) {
         const iframe = document.querySelector('#cusdis_thread iframe');
         if (iframe) {
-          iframe.style.height = (data.height + 80) + 'px'; // 👈 關鍵：多給空間
+          iframe.style.height = (data.height + 80) + 'px';
         }
       }
-    } catch (err) {}
+    } catch {}
   });
 </script>
 
 <style>
-  /* ✅ iframe 基本設定 */
   #cusdis_thread iframe {
     width: 100%;
     border: none;
     display: block;
-  }
-
-  /* ✅ 視覺上隱藏 scrollbar（Chrome / Safari） */
-  #cusdis_thread iframe::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* ✅ Firefox scrollbar 隱藏 */
-  #cusdis_thread iframe {
-    scrollbar-width: none;
   }
 </style>
