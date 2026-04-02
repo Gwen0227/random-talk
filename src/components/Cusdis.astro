@@ -16,7 +16,7 @@ const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 <script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
 
 <script is:inline>
-  // 🔥 關鍵：讓 iframe 高度自動跟內容同步
+  // 👇 自動調整 iframe 高度
   window.addEventListener('message', (e) => {
     if (!e.data) return;
 
@@ -26,15 +26,14 @@ const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
       if (data?.type === 'resize' && data?.height) {
         const iframe = document.querySelector('#cusdis_thread iframe');
         if (iframe) {
-          iframe.style.height = data.height + 'px';
+          iframe.style.height = (data.height + 80) + 'px'; // 👈 加 buffer
         }
       }
-    } catch (err) {}
+    } catch {}
   });
 </script>
 
 <style>
-  /* 保底避免多餘滾動 */
   #cusdis_thread iframe {
     width: 100%;
     border: none;
