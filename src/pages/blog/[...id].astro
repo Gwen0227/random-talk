@@ -5,18 +5,18 @@ import PostNavigation from '@/components/PostNavigation.astro'
 import SubpostsHeader from '@/components/SubpostsHeader.astro'
 import TOCHeader from '@/components/TOCHeader.astro'
 import Layout from '@/layouts/Layout.astro'
-// 💡 引入 Cusdis 組件
 import Cusdis from '@/components/Cusdis.astro'
+
 import {
   getAdjacentPosts,
   getAllPostsAndSubposts,
   getParentId,
   getParentPost,
   getPostReadingTime,
-  getTOCSections,
   hasSubposts,
   isSubpost,
 } from '@/lib/data-utils'
+
 import { formatDate } from '@/lib/utils'
 import { Icon } from 'astro-icon/components'
 import { Image } from 'astro:assets'
@@ -42,44 +42,62 @@ const navigation = await getAdjacentPosts(currentPostId)
 const parentPost = isCurrentSubpost ? await getParentPost(currentPostId) : null
 const hasChildPosts = await hasSubposts(currentPostId)
 const postReadingTime = await getPostReadingTime(currentPostId)
-
-// 🛠️ 關鍵修正：手動構建絕對路徑，確保與 Cusdis 後台設定一致
-// 這邊加上了 /random-talk/ 子目錄路徑
-// 💡 嘗試移除網址末端的斜線，這通常是解決 Cusdis "Not Found" 的特效藥
-const absoluteUrl = `https://gwen0227.github.io/random-talk/blog/${currentPostId}`;
 ---
 
 <Layout>
   <PostHead slot="head" post={post} />
   
   { (hasChildPosts || isCurrentSubpost) && (
-      <SubpostsHeader slot="subposts-navigation" parentId={isCurrentSubpost ? getParentId(currentPostId) : currentPostId} />
+    <SubpostsHeader
+      slot="subposts-navigation"
+      parentId={isCurrentSubpost ? getParentId(currentPostId) : currentPostId}
+    />
   )}
   
-  { headings?.length > 0 && <TOCHeader slot="table-of-contents" headings={headings} /> }
+  { headings?.length > 0 && (
+    <TOCHeader slot="table-of-contents" headings={headings} />
+  )}
 
   <section class="grid grid-cols-[minmax(0px,1fr)_min(calc(var(--breakpoint-md)-2rem),100%)_minmax(0px,1fr)] gap-y-6">
+    
     <div class="col-start-2">
-      <Breadcrumbs items={[{ href: '/blog', label: 'Blog', icon: 'lucide:library-big' }, { href: `/blog/${currentPostId}`, label: post.data.title, icon: 'lucide:book-open-text' }]} />
-      <h1 class="mt-6 text-3xl font-bold sm:text-4xl">{post.data.title}</h1>
-      <div class="text-muted-foreground mt-4 text-sm">{formatDate(post.data.date)} · {postReadingTime}</div>
+      <Breadcrumbs
+        items={[
+          { href: '/blog', label: 'Blog', icon: 'lucide:library-big' },
+          { href: `/blog/${currentPostId}`, label: post.data.title, icon: 'lucide:book-open-text' }
+        ]}
+      />
+      <h1 class="mt-6 text-3xl font-bold sm:text-4xl">
+        {post.data.title}
+      </h1>
+      <div class="text-muted-foreground mt-4 text-sm">
+        {formatDate(post.data.date)} · {postReadingTime}
+      </div>
     </div>
 
     { post.data.image && (
-        <Image src={post.data.image} alt={post.data.title} width={1200} height={630} class="col-span-full mx-auto w-full max-w-5xl object-cover aspect-[21/9]" />
+      <Image
+        src={post.data.image}
+        alt={post.data.title}
+        width={1200}
+        height={630}
+        class="col-span-full mx-auto w-full max-w-5xl object-cover aspect-[21/9]"
+      />
     )}
 
     <article class="prose col-start-2 max-w-none">
       <Content />
     </article>
 
+    {/* 👇 留言區 */}
     <div class="col-start-2 mt-12 py-10 border-t border-border/40">
       <h2 class="text-2xl font-bold mb-8">Comments</h2>
+
       <Cusdis 
-         pageId={Astro.url.pathname} 
-         pageUrl={Astro.url.href} 
-         pageTitle={post.data.title} 
-       />
+        pageId={Astro.url.pathname} 
+        pageUrl={Astro.url.href} 
+        pageTitle={post.data.title} 
+      />
     </div>
 
     <div class="col-start-2">
@@ -91,7 +109,12 @@ const absoluteUrl = `https://gwen0227.github.io/random-talk/blog/${currentPostId
     </div>
   </section>
 
-  <Button variant="outline" size="icon" className="group fixed right-8 bottom-8 z-50 hidden" id="scroll-to-top">
+  <Button
+    variant="outline"
+    size="icon"
+    className="group fixed right-8 bottom-8 z-50 hidden"
+    id="scroll-to-top"
+  >
     <Icon name="lucide:arrow-up" class="mx-auto size-4" />
   </Button>
 </Layout>
@@ -99,6 +122,10 @@ const absoluteUrl = `https://gwen0227.github.io/random-talk/blog/${currentPostId
 <script is:inline>
   document.addEventListener('astro:page-load', () => {
     const btn = document.getElementById('scroll-to-top');
-    if (btn) window.addEventListener('scroll', () => btn.classList.toggle('hidden', window.scrollY <= 300));
+    if (btn) {
+      window.addEventListener('scroll', () => {
+        btn.classList.toggle('hidden', window.scrollY <= 300);
+      });
+    }
   });
 </script>
