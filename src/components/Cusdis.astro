@@ -16,14 +16,20 @@ const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 <script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
 
 <style>
-  /* 👇 關鍵：避免出現捲軸 */
+  /* 🚨 重點：不要限制高度 */
   #cusdis_thread {
-    overflow: hidden;
+    width: 100%;
   }
 
-  #cusdis_thread iframe {
-    width: 100% !important;
-    min-height: 800px !important;
-    border: none !important;
+  /* 🚨 強制 Cusdis 自己撐開 */
+  #cusdis_thread > div {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* 🚨 防止內層滾動 */
+  #cusdis_thread * {
+    max-height: none !important;
   }
 </style>
