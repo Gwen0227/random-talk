@@ -2,29 +2,17 @@
 // src/components/Cusdis.astro
 const { pageId, pageUrl, pageTitle } = Astro.props;
 const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
-
-// 💡 移除所有複雜邏輯，用最原始的字串拼接
-const iframeSrc = `https://cusdis.com/api/widget?appId=${APP_ID}&pageId=${pageId}&pageUrl=${pageUrl}&pageTitle=${encodeURIComponent(pageTitle)}`;
 ---
 
-<div class="cusdis-container mt-16 pt-8 border-t border-border/40">
-  <iframe
-    src={iframeSrc}
-    style="width: 100%; min-height: 300px; border: 0;"
-    id="cusdis-iframe"
-    title="Cusdis"
-  ></iframe>
-</div>
+<div 
+  id="cusdis_thread"
+  data-host="https://cusdis.com"
+  data-app-id={APP_ID}
+  data-page-id={pageId}
+  data-page-url={pageUrl}
+  data-page-title={pageTitle}
+/>
 
 <script is:inline>
-  // 處理高度自適應
-  window.addEventListener('message', (e) => {
-    try {
-      const data = JSON.parse(e.data);
-      if (data.target === 'cusdis' && data.type === 'resize') {
-        const iframe = document.getElementById('cusdis-iframe');
-        if (iframe) iframe.style.height = data.data + 'px';
-      }
-    } catch (err) {}
-  });
+  import "https://cusdis.com/js/cusdis.es.js";
 </script>
