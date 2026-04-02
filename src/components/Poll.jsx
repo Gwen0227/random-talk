@@ -1,4 +1,3 @@
-// src/components/Poll.jsx
 import { supabase } from '../lib/supabase'
 import { useEffect, useState } from 'react'
 
@@ -6,102 +5,60 @@ export default function Poll({ slug, customOptions }) {
   const [poll, setPoll] = useState(null)
   const [options, setOptions] = useState([])
   const [voted, setVoted] = useState(false)
+  const [selectedOption, setSelectedOption] = useState(null)
 
   useEffect(() => {
-    if (!supabase) return // 🔥 防 SSR / env 還沒載入
-
     init()
   }, [])
 
   async function init() {
-    if (!supabase) return
-
-    // 1️⃣ 建立或取得 poll
     const { data: poll, error } = await supabase.rpc('get_or_create_poll', {
       slug_input: slug
     })
 
-    if (error || !poll) {
-      console.error('poll error:', error)
+    if (error) {
+      console.error(error)
       return
     }
 
     setPoll(poll)
 
-    // 2️⃣ 檢查 options 是否存在
-    const { data: existing, error: optError } = await supabase
+    const { data: existing } = await supabase
       .from('options')
       .select('*')
       .eq('poll_id', poll.id)
 
-    if (optError) {
-      console.error('options check error:', optError)
-      return
-    }
-
-    // 👉 只在第一次建立
     if ((!existing || existing.length === 0) && customOptions) {
-      const { error: insertError } = await supabase.from('options').insert(
+      await supabase.from('options').insert(
         customOptions.map(o => ({
           poll_id: poll.id,
           text: o,
           votes: 0
         }))
       )
-
-      if (insertError) {
-        console.error('insert options error:', insertError)
-      }
     }
 
-    // 3️⃣ 載入資料
-    await loadOptions(poll.id)
+    loadOptions(poll.id)
 
-    // 4️⃣ 即時更新
-    subscribe(poll.id)
-
-    // 5️⃣ 是否投過
-    if (localStorage.getItem('voted-' + poll.id)) {
+    // 👉 還原使用者投票
+    const saved = localStorage.getItem('voted-' + poll.id)
+    if (saved) {
       setVoted(true)
+      setSelectedOption(saved)
     }
   }
 
   async function loadOptions(pollId) {
-    if (!supabase) return
-
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('options')
       .select('*')
       .eq('poll_id', pollId)
 
-    if (error) {
-      console.error('load options error:', error)
-      return
-    }
-
-    setOptions(data || [])
-  }
-
-  function subscribe(pollId) {
-    if (!supabase) return
-
-    supabase
-      .channel('poll-' + pollId)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'options',
-          filter: `poll_id=eq.${pollId}`
-        },
-        () => loadOptions(pollId)
-      )
-      .subscribe()
+    setOptions(data)
   }
 
   async function vote(optionId) {
-    if (voted || !poll || !supabase) return
+    if (voted || !poll) return
 
     const fp = localStorage.getItem('fp') || crypto.randomUUID()
     localStorage.setItem('fp', fp)
@@ -113,46 +70,68 @@ export default function Poll({ slug, customOptions }) {
     })
 
     if (error) {
-      console.error('vote error:', error)
+      console.error(error)
       return
     }
 
-    localStorage.setItem('voted-' + poll.id, '1')
+    localStorage.setItem('voted-' + poll.id, optionId)
+    setSelectedOption(optionId)
     setVoted(true)
 
-    // 👉 立即更新 UI
     loadOptions(poll.id)
   }
 
-  const total = options.reduce((s, o) => s + (o.votes || 0), 0)
+  const total = options.reduce((s, o) => s + o.votes, 0)
+  const maxVotes = Math.max(...options.map(o => o.votes || 0), 0)
 
   return (
-    <div className="poll mt-10 space-y-3">
+    <div className="mt-10 space-y-4">
       <h3 className="text-lg font-semibold">
         {poll?.question || '你覺得這篇如何？'}
       </h3>
 
       {options.map(o => {
         const percent = total ? Math.round((o.votes / total) * 100) : 0
+        const isWinner = o.votes === maxVotes && voted
+        const isSelected = selectedOption == o.id
 
         return (
           <button
             key={o.id}
             onClick={() => vote(o.id)}
-            disabled={voted}
-            className={`poll-option relative w-full border rounded-lg px-4 py-2 text-left overflow-hidden transition ${
-              voted ? 'opacity-80 cursor-default' : 'hover:bg-muted'
-            }`}
+            className={`relative w-full rounded-xl px-4 py-3 text-left border transition-all overflow-hidden
+              ${voted ? 'bg-muted/50' : 'hover:scale-[1.02] hover:bg-muted'}
+              ${isWinner ? 'ring-2 ring-primary' : ''}
+            `}
           >
-            {/* 進度條 */}
+            {/* 🔥 動畫條 */}
             <div
-              className="absolute left-0 top-0 h-full bg-primary/20 transition-all duration-500"
+              className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 transition-all duration-500"
               style={{ width: voted ? percent + '%' : '0%' }}
             />
 
-            <div className="relative flex justify-between">
-              <span>{o.text}</span>
-              {voted && <span>{percent}%</span>}
+            <div className="relative flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span>{o.text}</span>
+
+                {/* 👉 顯示你投的 */}
+                {isSelected && (
+                  <span className="text-xs bg-primary text-white px-2 py-0.5 rounded">
+                    ✔ 你投的
+                  </span>
+                )}
+
+                {/* 👉 第一名 */}
+                {isWinner && (
+                  <span className="text-xs">🏆</span>
+                )}
+              </div>
+
+              {voted && (
+                <span className="text-sm font-semibold">
+                  {percent}%
+                </span>
+              )}
             </div>
           </button>
         )
