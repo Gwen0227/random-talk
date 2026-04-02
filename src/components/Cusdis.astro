@@ -16,7 +16,7 @@ const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 <script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
 
 <script is:inline>
-  // 👇 自動調整 iframe 高度
+  // ✅ 自動調整高度（加 buffer 避免出現 scrollbar）
   window.addEventListener('message', (e) => {
     if (!e.data) return;
 
@@ -26,17 +26,28 @@ const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
       if (data?.type === 'resize' && data?.height) {
         const iframe = document.querySelector('#cusdis_thread iframe');
         if (iframe) {
-          iframe.style.height = (data.height + 80) + 'px'; // 👈 加 buffer
+          iframe.style.height = (data.height + 80) + 'px'; // 👈 關鍵：多給空間
         }
       }
-    } catch {}
+    } catch (err) {}
   });
 </script>
 
 <style>
+  /* ✅ iframe 基本設定 */
   #cusdis_thread iframe {
     width: 100%;
     border: none;
     display: block;
+  }
+
+  /* ✅ 視覺上隱藏 scrollbar（Chrome / Safari） */
+  #cusdis_thread iframe::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ✅ Firefox scrollbar 隱藏 */
+  #cusdis_thread iframe {
+    scrollbar-width: none;
   }
 </style>
