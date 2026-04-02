@@ -9,6 +9,7 @@ authors: ['enscribe']
 
 import Callout from '@/components/Callout.astro'
 import { Icon } from 'astro-icon/components'
+import Poll from '../../components/Poll.jsx'
 
 ## Our (hesitantly) first content-based component
 
@@ -441,6 +442,7 @@ I'll add this little subgenre of variant called "example-based" callouts that ha
   </Callout>
 </Callout>
 <Poll
+  client:load
   slug="v1-5-0-callout"
   customOptions={["很喜歡", "普通", "不喜歡"]}
 />
