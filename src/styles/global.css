@@ -74,4 +74,43 @@
   ::file-selector-button {
     @apply border-border outline-ring/50 tracking-tight;
   }
+
+  .poll {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.poll-option {
+  position: relative;
+  padding: 12px;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  overflow: hidden;
+  transition: 0.2s;
+}
+
+.poll-option:hover {
+  background: #f5f5f5;
+}
+
+.poll-option.voted {
+  cursor: default;
+}
+
+.poll-option .bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: rgba(29, 155, 240, 0.2);
+  transition: width 0.6s ease;
+}
+
+.poll-option span {
+  position: relative;
+  z-index: 1;
+  margin-right: 10px;
+}
 }
