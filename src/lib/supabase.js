@@ -1,6 +1,16 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.SUPABASE_URL;
-const supabaseKey = import.meta.env.SUPABASE_KEY;
+let supabase = null
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+if (typeof window !== 'undefined') {
+  const url = import.meta.env.PUBLIC_SUPABASE_URL
+  const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !key) {
+    console.warn('❌ Supabase env missing')
+  } else {
+    supabase = createClient(url, key)
+  }
+}
+
+export { supabase }
