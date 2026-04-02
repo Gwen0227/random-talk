@@ -13,16 +13,23 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env: # ✅ 全域 env（比寫在 step 更穩）
+      PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+
     steps:
       - name: Checkout your repository using git
         uses: actions/checkout@v4
 
-      # 🔥 關鍵：這裡加入 env
+      # （可選但建議）Debug 確認 env 有吃到
+      - name: Debug env
+        run: |
+          echo "URL exists?"
+          echo $PUBLIC_SUPABASE_URL
+
       - name: Install, build, and upload your site
         uses: withastro/action@v3
-        env:
-          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
-          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
 
   deploy:
     needs: build
@@ -30,6 +37,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
