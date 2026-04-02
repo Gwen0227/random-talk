@@ -7,10 +7,23 @@ const APP_ID = "3e3e4b8b-4e1c-4699-9386-6474aa099834";
 <div 
   id="cusdis_thread"
   data-host="https://cusdis.com"
-  data-app-id="3e3e4b8b-4e1c-4699-9386-6474aa099834"
+  data-app-id={APP_ID}
   data-page-id={pageId}
   data-page-url={pageUrl}
   data-page-title={pageTitle}
 ></div>
 
 <script async defer src="https://cusdis.com/js/cusdis.es.js"></script>
+
+<style>
+  /* 👇 關鍵：避免出現捲軸 */
+  #cusdis_thread {
+    overflow: hidden;
+  }
+
+  #cusdis_thread iframe {
+    width: 100% !important;
+    min-height: 800px !important;
+    border: none !important;
+  }
+</style>
