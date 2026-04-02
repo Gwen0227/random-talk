@@ -4,21 +4,20 @@ import PageHead from '@/components/PageHead.astro'
 import { SITE } from '@/consts'
 import Layout from '@/layouts/Layout.astro'
 import { getAllPosts } from '@/lib/data-utils'
-import { supabase } from '../lib/supabase'
+import Todos from '@/components/Todos.jsx' // ✅ 用 React 元件（正確做法）
 
-// 1. 獲取所有文章並設定分頁邏輯
+// 1. 獲取文章
 const allPosts = await getAllPosts()
+
 const postsPerPage = SITE.postsPerPage || 5
 const initialPosts = allPosts.slice(0, postsPerPage)
 const totalPages = Math.ceil(allPosts.length / postsPerPage)
-const { data, error } = await supabase.from("todos").select('*')
-
-// 移除原本報錯的 latestPosts，直接統一使用 initialPosts 作為初始顯示
 ---
 
 <Layout class="max-w-3xl">
   <PageHead slot="head" title="Home" />
   
+  {/* 🔥 Hero */}
   <section class="flex flex-col-reverse md:flex-row items-center justify-between py-12 gap-8">
     <div class="flex-1">
       <h1 class="text-5xl font-bold mb-4 text-foreground">I'm John Doe.</h1>
@@ -32,6 +31,7 @@ const { data, error } = await supabase.from("todos").select('*')
     </div>
   </section>
 
+  {/* 🔥 文章 */}
   <section class="flex flex-col gap-y-4 mt-8">
     <h2 class="text-2xl font-bold mb-4 text-foreground">Latest posts</h2>
     
@@ -45,7 +45,6 @@ const { data, error } = await supabase.from("todos").select('*')
         {
           initialPosts.map((post) => (
             <li>
-              {/* 統一使用 entry={post} 確保不報錯 */}
               <BlogCard entry={post} />
             </li>
           ))
@@ -59,6 +58,13 @@ const { data, error } = await supabase.from("todos").select('*')
       </div>
     </div>
   </section>
+
+  {/* 🔥 Supabase（正確位置） */}
+  <section class="mt-12">
+    <h2 class="text-2xl font-bold mb-4">Todos</h2>
+    <Todos client:load />
+  </section>
+
 </Layout>
 
 <script>
@@ -123,8 +129,3 @@ const { data, error } = await supabase.from("todos").select('*')
 
   document.addEventListener('astro:page-load', setupInfiniteScroll);
 </script>
-<ul>
-10      {data.map((entry) => (
-11        <li>{entry.name}</li>
-12      ))}
-13    </ul>
