@@ -7,7 +7,6 @@ import { SITE } from '@/consts'
 import Layout from '@/layouts/Layout.astro'
 import { getAllPosts, groupPostsByYear } from '@/lib/data-utils'
 import type { PaginateFunction } from 'astro'
-import { cn } from '@/lib/utils'
 
 export async function getStaticPaths({
   paginate,
@@ -20,10 +19,27 @@ export async function getStaticPaths({
 
 const { page } = Astro.props
 
+// 🔥 抓所有文章（用來產生分類）
+const allPosts = await getAllPosts()
+
+// 🔥 收集所有 tags
+const tagMap = new Map()
+
+allPosts.forEach(post => {
+  post.data.tags?.forEach(tag => {
+    tagMap.set(tag, (tagMap.get(tag) || 0) + 1)
+  })
+})
+
+// 👉 轉成 array 並排序（文章多的排前面）
+const tags = Array.from(tagMap.entries())
+  .sort((a, b) => b[1] - a[1])
+
+// 👉 原本的文章分組
 const postsByYear = groupPostsByYear(page.data)
 const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a))
 
-// 處理 GitHub Pages 的子目錄路徑
+// 處理 GitHub Pages 路徑
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const paginationBaseUrl = `${base}/blog/`
 ---
@@ -38,31 +54,23 @@ const paginationBaseUrl = `${base}/blog/`
     ]}
   />
 
+  {/* 🔥 自動分類 UI */}
   <div class="flex flex-wrap gap-3 my-8 font-sans">
     <a 
-      href=`${base}/blog` 
+      href={`${base}/blog`} 
       class="flex-1 min-w-[80px] py-2.5 px-4 bg-muted/50 hover:bg-muted text-center rounded-lg transition-all border border-border/40 text-sm font-medium text-foreground"
     >
       All
     </a>
-    <a 
-      href=`${base}/tags/ACG` 
-      class="flex-1 min-w-[80px] py-2.5 px-4 bg-muted/50 hover:bg-muted text-center rounded-lg transition-all border border-border/40 text-sm font-medium text-foreground"
-    >
-      ACG
-    </a>
-    <a 
-      href=`${base}/tags/Film` 
-      class="flex-1 min-w-[80px] py-2.5 px-4 bg-muted/50 hover:bg-muted text-center rounded-lg transition-all border border-border/40 text-sm font-medium text-foreground"
-    >
-      Film/Drama
-    </a>
-    <a 
-      href=`${base}/tags/Memo` 
-      class="flex-1 min-w-[80px] py-2.5 px-4 bg-muted/50 hover:bg-muted text-center rounded-lg transition-all border border-border/40 text-sm font-medium text-foreground"
-    >
-      Memo
-    </a>
+
+    {tags.map(([tag, count]) => (
+      <a 
+        href={`${base}/tags/${tag}`}
+        class="flex-1 min-w-[80px] py-2.5 px-4 bg-muted/50 hover:bg-muted text-center rounded-lg transition-all border border-border/40 text-sm font-medium text-foreground"
+      >
+        {tag} ({count})
+      </a>
+    ))}
   </div>
 
   <div class="flex min-h-[calc(100vh-18rem)] flex-col gap-y-10">
@@ -95,7 +103,6 @@ const paginationBaseUrl = `${base}/blog/`
 </Layout>
 
 <style>
-  /* 微調按鈕點擊感 */
   a:active {
     transform: scale(0.98);
   }
