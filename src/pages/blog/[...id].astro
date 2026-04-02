@@ -6,7 +6,7 @@ import SubpostsHeader from '@/components/SubpostsHeader.astro'
 import TOCHeader from '@/components/TOCHeader.astro'
 import Layout from '@/layouts/Layout.astro'
 import Cusdis from '@/components/Cusdis.astro'
-import Poll from '../../components/Poll.jsx'
+import Poll from '@/components/Poll.jsx'
 
 import {
   getAdjacentPosts,
@@ -53,11 +53,11 @@ const postReadingTime = await getPostReadingTime(currentPostId)
       slot="subposts-navigation"
       parentId={isCurrentSubpost ? getParentId(currentPostId) : currentPostId}
     />
-  )}
+  ) }
   
   { headings?.length > 0 && (
     <TOCHeader slot="table-of-contents" headings={headings} />
-  )}
+  ) }
 
   <section class="grid grid-cols-[minmax(0px,1fr)_min(calc(var(--breakpoint-md)-2rem),100%)_minmax(0px,1fr)] gap-y-6">
     
@@ -84,13 +84,14 @@ const postReadingTime = await getPostReadingTime(currentPostId)
         height={630}
         class="col-span-full mx-auto w-full max-w-5xl object-cover aspect-[21/9]"
       />
-    )}
+    ) }
 
+    {/* 🧠 文章內容 */}
     <article class="prose col-start-2 max-w-none">
-      <Content />
+      <Content components={{ Poll }} />
     </article>
 
-    {/* 👇 留言區 */}
+    {/* 💬 留言區 */}
     <div class="col-start-2 mt-12 py-10 border-t border-border/40">
       <h2 class="text-2xl font-bold mb-8">Comments</h2>
 
