@@ -128,7 +128,6 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
 
     let isLoading = false
 
-    // 已經是最後一頁，就不用啟動 Infinite Scroll
     if (currentPage >= totalPages) {
       sentinel.style.display = 'none'
       return
@@ -180,52 +179,33 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
           ) {
             newPosts.forEach((post) => {
               /*
-               * 複製文章
+               * 直接建立新的 li，
+               * 不使用 cloneNode，
+               * 避免 TypeScript Node / classList 錯誤。
                */
-              const clonedPost =
-                post.cloneNode(true)
+              const newPost =
+                document.createElement('li')
 
               /*
-               * 確保所有 Infinite Scroll
-               * 載入的文章都有左線
-               *
-               * 即使 /blog/2、/blog/3...
-               * 的原始 HTML 沒有左線，
-               * 加入首頁時也會自動補上。
+               * 每一篇文章都強制使用
+               * 4px 左線。
                */
-              clonedPost.classList.add(
-                'border-l-4',
-                'border-border/50',
-                'pl-10'
-              )
+              newPost.className =
+                'border-l-4 border-border/50 pl-10'
 
               /*
-               * 避免舊結構留下右線或
-               * 圓角文章外框
+               * 把原本文章內容複製進新的 li。
                */
-              clonedPost.classList.remove(
-                'border',
-                'border-r',
-                'border-r-2',
-                'border-r-4',
-                'rounded',
-                'rounded-sm',
-                'rounded-md',
-                'rounded-lg',
-                'rounded-xl',
-                'rounded-2xl',
-                'bg-muted/50'
-              )
+              newPost.innerHTML =
+                post.innerHTML
 
-              container.appendChild(
-                clonedPost
-              )
+              /*
+               * 加入首頁文章列表。
+               */
+              container.appendChild(newPost)
             })
           }
 
-          /*
-           * 已經載入最後一頁
-           */
           if (
             currentPage >= totalPages
           ) {
