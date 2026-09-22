@@ -5,7 +5,7 @@ import { SITE } from '@/consts'
 import Layout from '@/layouts/Layout.astro'
 import { getAllPosts } from '@/lib/data-utils'
 
-// 1. 獲取文章
+// 取得所有文章
 const allPosts = await getAllPosts()
 
 const postsPerPage = SITE.postsPerPage || 5
@@ -13,36 +13,46 @@ const initialPosts = allPosts.slice(0, postsPerPage)
 const totalPages = Math.ceil(allPosts.length / postsPerPage)
 
 // GitHub Pages base path
-const baseUrl = import.meta.env.BASE_URL
+const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
 ---
 
 <Layout class="max-w-3xl">
   <PageHead slot="head" title="Home" />
 
   {/* Hero */}
-  <section class="flex flex-col-reverse md:flex-row items-center justify-between py-12 gap-8">
+  <section
+    class="flex flex-col-reverse items-center justify-between gap-8 py-12 md:flex-row"
+  >
     <div class="flex-1">
-      <h1 class="text-5xl font-bold mb-4 text-foreground">I'm John Doe.</h1>
+      <h1 class="mb-4 text-5xl font-bold text-foreground">
+        I'm John Doe.
+      </h1>
 
-      <p class="text-muted-foreground text-lg leading-relaxed font-sans">
-        A passionate web developer with a knack for creating dynamic and responsive web applications.
-        With a background in computer science and a love for coding, I thrive on turning ideas into reality through technology.
+      <p class="font-sans text-lg leading-relaxed text-muted-foreground">
+        A passionate web developer with a knack for creating dynamic and
+        responsive web applications. With a background in computer science and
+        a love for coding, I thrive on turning ideas into reality through
+        technology.
       </p>
     </div>
 
-    <div class="w-32 h-32 bg-muted rounded-full flex-shrink-0 overflow-hidden border-4 border-border/50 shadow-sm">
+    <div
+      class="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border-4 border-border/50 bg-muted shadow-sm"
+    >
       <img
-        src={`${baseUrl}avatar.jpg`}
+        src={`${baseUrl}/avatar.jpg`}
         alt="Avatar"
-        class="w-full h-full object-cover opacity-0 transition-opacity"
+        class="h-full w-full object-cover opacity-0 transition-opacity"
         onload="this.style.opacity='1'"
       />
     </div>
   </section>
 
   {/* 文章 */}
-  <section class="flex flex-col gap-y-4 mt-8">
-    <h2 class="text-2xl font-bold mb-4 text-foreground">Latest posts</h2>
+  <section class="mt-8 flex flex-col gap-y-4">
+    <h2 class="mb-4 text-2xl font-bold text-foreground">
+      Latest posts
+    </h2>
 
     <div
       id="infinite-scroll-wrapper"
@@ -50,23 +60,26 @@ const baseUrl = import.meta.env.BASE_URL
       data-total-pages={totalPages}
       data-base-url={baseUrl}
     >
-      <ul id="post-container" class="flex flex-col gap-y-8">
-  {
-    initialPosts.map((post) => (
-      <li>
-        <BlogCard entry={post} />
-      </li>
-    ))
-  }
-</ul>
+      <ul
+        id="post-container"
+        class="flex flex-col gap-y-8"
+      >
+        {
+          initialPosts.map((post) => (
+            <li class="border-l-4 border-border/50 pl-10">
+              <BlogCard entry={post} />
+            </li>
+          ))
+        }
+      </ul>
 
       <div
         id="scroll-sentinel"
-        class="h-20 w-full flex justify-center items-center mt-8"
+        class="mt-8 flex h-20 w-full items-center justify-center"
       >
         <div
           id="loader"
-          class="hidden text-sm text-muted-foreground animate-pulse font-sans"
+          class="hidden animate-pulse font-sans text-sm text-muted-foreground"
         >
           Loading more posts...
         </div>
@@ -77,12 +90,23 @@ const baseUrl = import.meta.env.BASE_URL
 
 <script>
   function setupInfiniteScroll() {
-    const wrapper = document.getElementById('infinite-scroll-wrapper')
-    const container = document.getElementById('post-container')
-    const sentinel = document.getElementById('scroll-sentinel')
+    const wrapper = document.getElementById(
+      'infinite-scroll-wrapper'
+    )
+
+    const container = document.getElementById(
+      'post-container'
+    )
+
+    const sentinel = document.getElementById(
+      'scroll-sentinel'
+    )
+
     const loader = document.getElementById('loader')
 
-    if (!wrapper || !container || !sentinel) return
+    if (!wrapper || !container || !sentinel) {
+      return
+    }
 
     let currentPage = parseInt(
       wrapper.dataset.currentPage || '1',
@@ -97,10 +121,14 @@ const baseUrl = import.meta.env.BASE_URL
     const baseUrl =
       wrapper.dataset.baseUrl === '/'
         ? ''
-        : (wrapper.dataset.baseUrl || '').replace(/\/$/, '')
+        : (wrapper.dataset.baseUrl || '').replace(
+            /\/$/,
+            ''
+          )
 
     let isLoading = false
 
+    // 已經是最後一頁，就不用啟動 Infinite Scroll
     if (currentPage >= totalPages) {
       sentinel.style.display = 'none'
       return
@@ -109,58 +137,111 @@ const baseUrl = import.meta.env.BASE_URL
     const observer = new IntersectionObserver(
       async (entries) => {
         if (
-          entries[0].isIntersecting &&
-          !isLoading &&
-          currentPage < totalPages
+          !entries[0].isIntersecting ||
+          isLoading ||
+          currentPage >= totalPages
         ) {
-          isLoading = true
-          currentPage++
+          return
+        }
 
-          loader?.classList.remove('hidden')
+        isLoading = true
+        currentPage++
 
-          try {
-            const response = await fetch(
-              `${baseUrl}/blog/${currentPage}`
+        loader?.classList.remove('hidden')
+
+        try {
+          const response = await fetch(
+            `${baseUrl}/blog/${currentPage}`
+          )
+
+          if (!response.ok) {
+            throw new Error(
+              `Next page not found: ${currentPage}`
             )
-
-            if (!response.ok) {
-              throw new Error('Next page not found')
-            }
-
-            const html = await response.text()
-
-            const parser = new DOMParser()
-            const doc = parser.parseFromString(
-              html,
-              'text/html'
-            )
-
-            const newPosts =
-              doc.querySelectorAll('#post-container li')
-
-            if (newPosts.length > 0 && container) {
-              newPosts.forEach((post) => {
-                container.appendChild(
-                  post.cloneNode(true)
-                )
-              })
-            }
-
-            if (currentPage >= totalPages) {
-              observer.disconnect()
-              sentinel.style.display = 'none'
-            }
-          } catch (error) {
-            console.error(
-              'Error loading posts:',
-              error
-            )
-
-            observer.disconnect()
-          } finally {
-            isLoading = false
-            loader?.classList.add('hidden')
           }
+
+          const html = await response.text()
+
+          const parser = new DOMParser()
+
+          const doc = parser.parseFromString(
+            html,
+            'text/html'
+          )
+
+          const newPosts =
+            doc.querySelectorAll(
+              '#post-container li'
+            )
+
+          if (
+            newPosts.length > 0 &&
+            container
+          ) {
+            newPosts.forEach((post) => {
+              /*
+               * 複製文章
+               */
+              const clonedPost =
+                post.cloneNode(true)
+
+              /*
+               * 確保所有 Infinite Scroll
+               * 載入的文章都有左線
+               *
+               * 即使 /blog/2、/blog/3...
+               * 的原始 HTML 沒有左線，
+               * 加入首頁時也會自動補上。
+               */
+              clonedPost.classList.add(
+                'border-l-4',
+                'border-border/50',
+                'pl-10'
+              )
+
+              /*
+               * 避免舊結構留下右線或
+               * 圓角文章外框
+               */
+              clonedPost.classList.remove(
+                'border',
+                'border-r',
+                'border-r-2',
+                'border-r-4',
+                'rounded',
+                'rounded-sm',
+                'rounded-md',
+                'rounded-lg',
+                'rounded-xl',
+                'rounded-2xl',
+                'bg-muted/50'
+              )
+
+              container.appendChild(
+                clonedPost
+              )
+            })
+          }
+
+          /*
+           * 已經載入最後一頁
+           */
+          if (
+            currentPage >= totalPages
+          ) {
+            observer.disconnect()
+            sentinel.style.display = 'none'
+          }
+        } catch (error) {
+          console.error(
+            'Error loading posts:',
+            error
+          )
+
+          observer.disconnect()
+        } finally {
+          isLoading = false
+          loader?.classList.add('hidden')
         }
       },
       {
