@@ -50,18 +50,15 @@ const baseUrl = import.meta.env.BASE_URL
       data-total-pages={totalPages}
       data-base-url={baseUrl}
     >
-      <ul
-        id="post-container"
-        class="flex flex-col gap-y-6 border-l-2 border-r border-border/40 pl-10 pr-10"
-      >
-        {
-          initialPosts.map((post) => (
-            <li>
-              <BlogCard entry={post} />
-            </li>
-          ))
-        }
-      </ul>
+      <ul id="post-container" class="flex flex-col gap-y-8">
+  {
+    initialPosts.map((post) => (
+      <li class="border-l-2 border-border/40 pl-10">
+        <BlogCard entry={post} />
+      </li>
+    ))
+  }
+</ul>
 
       <div
         id="scroll-sentinel"
