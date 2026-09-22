@@ -17,13 +17,15 @@ interface Props {
 }
 
 const { entry } = Astro.props
+
 const formattedDate = formatDate(entry.data.date)
 const readTime = await getCombinedReadingTime(entry.id)
+
 const subpostCount = !isSubpost(entry.id)
   ? await getSubpostCount(entry.id)
   : 0
 
-// 修正：處理 GitHub Pages 的基礎路徑
+// GitHub Pages base path
 const base =
   import.meta.env.BASE_URL === '/'
     ? ''
@@ -32,9 +34,7 @@ const base =
 const postUrl = `${base}/${entry.collection}/${entry.id}`
 ---
 
-<div
-  class="border-l-2 border-border/40 pl-10 transition-colors duration-300 ease-in-out"
->
+<div class="border-l-2 border-border/40 pl-10">
   <Link
     href={postUrl}
     class="flex flex-col gap-4 sm:flex-row"
@@ -47,7 +47,7 @@ const postUrl = `${base}/${entry.collection}/${entry.id}`
             alt={entry.data.title}
             width={1200}
             height={630}
-            class="object-cover aspect-[21/9] rounded-lg"
+            class="aspect-[21/9] rounded-lg object-cover"
           />
         </div>
       )
@@ -87,6 +87,7 @@ const postUrl = `${base}/${entry.collection}/${entry.id}`
                   name="lucide:file-text"
                   class="size-3"
                 />
+
                 {subpostCount} subpost
                 {subpostCount === 1 ? '' : 's'}
               </span>

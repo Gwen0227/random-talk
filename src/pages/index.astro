@@ -53,7 +53,7 @@ const baseUrl = import.meta.env.BASE_URL
       <ul id="post-container" class="flex flex-col gap-y-8">
   {
     initialPosts.map((post) => (
-      <li class="border-l-2 border-border/40 pl-10">
+      <li>
         <BlogCard entry={post} />
       </li>
     ))
