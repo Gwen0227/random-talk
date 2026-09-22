@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .env
+.env.*
 .env.production
 .DS_Store
 .idea/

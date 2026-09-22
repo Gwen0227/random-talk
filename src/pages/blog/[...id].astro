@@ -5,7 +5,6 @@ import PostNavigation from '@/components/PostNavigation.astro'
 import SubpostsHeader from '@/components/SubpostsHeader.astro'
 import TOCHeader from '@/components/TOCHeader.astro'
 import Layout from '@/layouts/Layout.astro'
-import Cusdis from '@/components/Cusdis.astro'
 import Poll from '@/components/Poll.jsx'
 
 import {
@@ -88,18 +87,12 @@ const postReadingTime = await getPostReadingTime(currentPostId)
 
     {/* 🧠 文章內容 */}
     <article class="prose col-start-2 max-w-none">
-      <Content components={{ Poll }} />
+      <Content />
     </article>
 
-    {/* 💬 留言區 */}
-    <div class="col-start-2 mt-12 py-10 border-t border-border/40">
-      <h2 class="text-2xl font-bold mb-8">Comments</h2>
-
-      <Cusdis 
-        pageId={Astro.url.pathname} 
-        pageUrl={Astro.url.href} 
-        pageTitle={post.data.title} 
-      />
+    {/* 🗳️ Poll */}
+    <div class="col-start-2">
+      <Poll client:load postSlug={currentPostId} /> 
     </div>
 
     <div class="col-start-2">

@@ -1,145 +1,349 @@
-import { supabase } from '../lib/supabase'
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
-export default function Poll({ slug, customOptions }) {
-  const [poll, setPoll] = useState(null)
-  const [options, setOptions] = useState([])
-  const [voted, setVoted] = useState(false)
-  const [selectedOption, setSelectedOption] = useState(null)
+export default function Poll({ postSlug }) {
+  const [poll, setPoll] = useState(null);
+  const [options, setOptions] = useState([]);
+  const [votes, setVotes] = useState([]);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [voting, setVoting] = useState(false);
+  const [animateResults, setAnimateResults] = useState(false);
+
+  const getVoterId = () => {
+    const key = "random-talk-voter-id";
+
+    let voterId = localStorage.getItem(key);
+
+    if (!voterId) {
+      voterId = crypto.randomUUID();
+      localStorage.setItem(key, voterId);
+    }
+
+    return voterId;
+  };
+
+  const loadPoll = async () => {
+    try {
+      setLoading(true);
+
+      const { data: pollData, error: pollError } = await supabase
+        .from("polls")
+        .select("*")
+        .eq("post_slug", postSlug)
+        .single();
+
+      if (pollError) {
+        console.error("Poll loading error:", pollError);
+        setPoll(null);
+        return;
+      }
+
+      setPoll(pollData);
+
+      const { data: optionData, error: optionError } = await supabase
+        .from("poll_options")
+        .select("*")
+        .eq("poll_id", pollData.id)
+        .order("sort_order");
+
+      if (optionError) {
+        console.error("Poll options error:", optionError);
+        return;
+      }
+
+      setOptions(optionData || []);
+
+      const { data: voteData, error: voteError } = await supabase
+        .from("poll_votes")
+        .select("*")
+        .eq("poll_id", pollData.id);
+
+      if (voteError) {
+        console.error("Poll votes error:", voteError);
+        return;
+      }
+
+      const currentVotes = voteData || [];
+
+      setVotes(currentVotes);
+
+      const voterId = getVoterId();
+
+      const myVote = currentVotes.find(
+        (vote) => vote.voter_id === voterId
+      );
+
+      if (myVote) {
+        setHasVoted(true);
+        setSelectedOption(myVote.option_id);
+      }
+    } catch (error) {
+      console.error("Poll error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    init()
-  }, [])
+    loadPoll();
+  }, [postSlug]);
 
-  async function init() {
-    const { data: poll, error } = await supabase.rpc('get_or_create_poll', {
-      slug_input: slug
-    })
-
-    if (error) {
-      console.error(error)
-      return
+  useEffect(() => {
+    if (!poll?.id) {
+      return;
     }
 
-    setPoll(poll)
-
-    const { data: existing } = await supabase
-      .from('options')
-      .select('*')
-      .eq('poll_id', poll.id)
-
-    if ((!existing || existing.length === 0) && customOptions) {
-      await supabase.from('options').insert(
-        customOptions.map(o => ({
-          poll_id: poll.id,
-          text: o,
-          votes: 0
-        }))
+    const channel = supabase
+      .channel(`poll-${poll.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "poll_votes",
+          filter: `poll_id=eq.${poll.id}`,
+        },
+        () => {
+          loadPoll();
+        }
       )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [poll?.id]);
+
+  const handleSelect = (optionId) => {
+    if (hasVoted || voting) {
+      return;
     }
 
-    loadOptions(poll.id)
+    setSelectedOption(optionId);
+  };
 
-    // 👉 還原使用者投票
-    const saved = localStorage.getItem('voted-' + poll.id)
-    if (saved) {
-      setVoted(true)
-      setSelectedOption(saved)
-    }
-  }
-
-  async function loadOptions(pollId) {
-    const { data } = await supabase
-      .from('options')
-      .select('*')
-      .eq('poll_id', pollId)
-
-    setOptions(data)
-  }
-
-  async function vote(optionId) {
-    if (voted || !poll) return
-
-    const fp = localStorage.getItem('fp') || crypto.randomUUID()
-    localStorage.setItem('fp', fp)
-
-    const { error } = await supabase.rpc('vote', {
-      poll_id_input: poll.id,
-      option_id_input: optionId,
-      fingerprint_input: fp
-    })
-
-    if (error) {
-      console.error(error)
-      return
+  const handleVote = async () => {
+    if (!selectedOption || !poll || hasVoted || voting) {
+      return;
     }
 
-    localStorage.setItem('voted-' + poll.id, optionId)
-    setSelectedOption(optionId)
-    setVoted(true)
+    try {
+      setVoting(true);
 
-    loadOptions(poll.id)
+      const voterId = getVoterId();
+
+      const { error } = await supabase
+        .from("poll_votes")
+        .insert({
+          poll_id: poll.id,
+          option_id: selectedOption,
+          voter_id: voterId,
+        });
+
+      if (error) {
+        console.error("Vote error:", error);
+
+        if (error.code === "23505") {
+          await loadPoll();
+        }
+
+        return;
+      }
+
+      setHasVoted(true);
+      setAnimateResults(false);
+
+      await loadPoll();
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setAnimateResults(true);
+        });
+      });
+    } finally {
+      setVoting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="poll-container mt-12">
+        <div className="rounded-2xl border border-border/40 p-6">
+          <div className="animate-pulse">
+            <div className="h-5 w-2/3 rounded bg-muted" />
+
+            <div className="mt-6 space-y-3">
+              <div className="h-12 rounded-xl bg-muted" />
+              <div className="h-12 rounded-xl bg-muted" />
+              <div className="h-12 rounded-xl bg-muted" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const total = options.reduce((s, o) => s + o.votes, 0)
-  const maxVotes = Math.max(...options.map(o => o.votes || 0), 0)
+  if (!poll) {
+    return null;
+  }
+
+  const totalVotes = votes.length;
+
+  const getVoteCount = (optionId) => {
+    return votes.filter(
+      (vote) => vote.option_id === optionId
+    ).length;
+  };
+
+  const getPercentage = (optionId) => {
+    if (totalVotes === 0) {
+      return 0;
+    }
+
+    return Math.round(
+      (getVoteCount(optionId) / totalVotes) * 100
+    );
+  };
 
   return (
-    <div className="mt-10 space-y-4">
-      <h3 className="text-lg font-semibold">
-        {poll?.question || '你覺得這篇如何？'}
-      </h3>
+    <section className="poll-container mt-12 border-t border-border/40 pt-8">
+      <div className="rounded-2xl border border-border/60 bg-background p-5 shadow-sm sm:p-6">
 
-      {options.map(o => {
-        const percent = total ? Math.round((o.votes / total) * 100) : 0
-        const isWinner = o.votes === maxVotes && voted
-        const isSelected = selectedOption == o.id
+        {/* Poll title */}
+        <div>
+          <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Poll
+          </div>
 
-        return (
-          <button
-            key={o.id}
-            onClick={() => vote(o.id)}
-            className={`relative w-full rounded-xl px-4 py-3 text-left border transition-all overflow-hidden
-              ${voted ? 'bg-muted/50' : 'hover:scale-[1.02] hover:bg-muted'}
-              ${isWinner ? 'ring-2 ring-primary' : ''}
-            `}
-          >
-            {/* 🔥 動畫條 */}
-            <div
-              className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 transition-all duration-500"
-              style={{ width: voted ? percent + '%' : '0%' }}
-            />
+          <h3 className="text-xl font-semibold leading-relaxed sm:text-2xl">
+            {poll.question}
+          </h3>
+        </div>
 
-            <div className="relative flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <span>{o.text}</span>
+        {/* Voting */}
+        {!hasVoted && (
+          <div className="mt-6 space-y-3">
 
-                {/* 👉 顯示你投的 */}
-                {isSelected && (
-                  <span className="text-xs bg-primary text-white px-2 py-0.5 rounded">
-                    ✔ 你投的
-                  </span>
-                )}
+            {options.map((option) => {
+              const isSelected =
+                selectedOption === option.id;
 
-                {/* 👉 第一名 */}
-                {isWinner && (
-                  <span className="text-xs">🏆</span>
-                )}
-              </div>
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleSelect(option.id)}
+                  disabled={voting}
+                  aria-pressed={isSelected}
+                  className={`group w-full rounded-xl border px-4 py-3.5 text-left transition-all duration-200 ${
+                    isSelected
+                      ? "border-foreground bg-foreground/5 shadow-sm"
+                      : "border-border/60 hover:-translate-y-0.5 hover:border-foreground/40 hover:bg-muted/40"
+                  } ${
+                    voting
+                      ? "cursor-not-allowed opacity-70"
+                      : "cursor-pointer"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
 
-              {voted && (
-                <span className="text-sm font-semibold">
-                  {percent}%
-                </span>
-              )}
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200 ${
+                        isSelected
+                          ? "scale-110 border-foreground"
+                          : "border-muted-foreground/40 group-hover:border-foreground/60"
+                      }`}
+                    >
+                      <span
+                        className={`h-2.5 w-2.5 rounded-full bg-foreground transition-all duration-200 ${
+                          isSelected
+                            ? "scale-100 opacity-100"
+                            : "scale-0 opacity-0"
+                        }`}
+                      />
+                    </span>
+
+                    <span className="font-medium">
+                      {option.option_text}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={handleVote}
+              disabled={!selectedOption || voting}
+              className="mt-4 w-full rounded-full bg-foreground px-5 py-3.5 font-medium text-background transition-all duration-200 hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {voting ? "投票中…" : "投票"}
+            </button>
+
+            <p className="pt-1 text-center text-xs text-muted-foreground">
+              每個瀏覽器只能投票一次
+            </p>
+          </div>
+        )}
+
+        {/* Results */}
+        {hasVoted && (
+          <div className="mt-6 space-y-5">
+
+            {options.map((option) => {
+              const percentage = getPercentage(option.id);
+              const voteCount = getVoteCount(option.id);
+
+              const isSelected =
+                selectedOption === option.id;
+
+              return (
+                <div key={option.id}>
+
+                  <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="truncate font-medium">
+                        {option.option_text}
+                      </span>
+
+                      {isSelected && (
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          ✓ 你的選擇
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="shrink-0 font-semibold">
+                      {percentage}%
+                    </span>
+                  </div>
+
+                  <div className="h-3 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-foreground transition-[width] duration-1000 ease-out"
+                      style={{
+                        width: animateResults
+                          ? `${percentage}%`
+                          : "0%",
+                      }}
+                    />
+                  </div>
+
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {voteCount} 票
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="border-t border-border/40 pt-4 text-sm text-muted-foreground">
+              共 {totalVotes} 票 · 你已投票
             </div>
-          </button>
-        )
-      })}
-
-      <small className="text-muted-foreground">
-        {total} votes
-      </small>
-    </div>
-  )
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }

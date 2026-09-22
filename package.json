@@ -9,6 +9,7 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "sync-polls": "node scripts/sync-polls.mjs",
     "prettier": "prettier --write **/*.{ts,tsx,css,astro} --ignore-path .gitignore"
   },
   "dependencies": {
@@ -22,7 +23,7 @@
     "@expressive-code/plugin-line-numbers": "^0.40.2",
     "@iconify-json/lucide": "^1.2.26",
     "@shikijs/rehype": "^3.4.0",
-    "@supabase/supabase-js": "^2.101.1",
+    "@supabase/supabase-js": "^2.116.0",
     "@tailwindcss/vite": "^4.0.7",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
@@ -30,6 +31,8 @@
     "astro-icon": "^1.1.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^18.0.2",
+    "gray-matter": "^4.0.3",
     "lucide-react": "^0.469.0",
     "radix-ui": "^1.3.4",
     "react": "^19.0.0",
