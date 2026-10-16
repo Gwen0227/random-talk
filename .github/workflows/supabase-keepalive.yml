@@ -1,0 +1,48 @@
+
+name: Supabase Polls Keep Alive
+
+on:
+  schedule:
+    # 每天台灣時間上午 11:00
+    - cron: "0 3 * * *"
+    # 每天台灣時間晚上 11:00
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-supabase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Check Supabase polls table
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$SUPABASE_URL" || -z "$SUPABASE_KEY" ]]; then
+            echo "錯誤：請先設定 SUPABASE_URL 和 SUPABASE_KEY。"
+            exit 1
+          fi
+
+          echo "正在讀取 Supabase polls 資料表..."
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --get \
+            "${SUPABASE_URL%/}/rest/v1/polls" \
+            --data-urlencode "select=id" \
+            --data-urlencode "limit=1" \
+            --header "apikey: ${SUPABASE_KEY}" \
+            --header "Accept: application/json" \
+            --output /dev/null
+
+          echo "成功：Supabase polls 資料表讀取請求完成。"
