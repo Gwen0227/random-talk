@@ -68,7 +68,7 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
       >
         {
           initialPosts.map((post) => (
-            <li class="border-l-4 border-border/50 pl-2">
+            <li class="border-l-4 border-border/50 px-2">
               <BlogCard entry={post} />
             </li>
           ))
@@ -187,12 +187,12 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
                 document.createElement('li')
 
               /*
-               * 左側灰線與縮圖間距：
-               * border-l-4 = 4px 左線
-               * pl-2       = 8px 左側內距
+               * 左右內距一致：
+               * border-l-4 = 4px 左側灰線
+               * px-2       = 左右各 8px 內距
                */
               newPost.className =
-                'border-l-4 border-border/50 pl-2'
+                'border-l-4 border-border/50 px-2'
 
               /*
                * 複製文章內容
