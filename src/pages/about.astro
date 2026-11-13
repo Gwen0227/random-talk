@@ -2,11 +2,37 @@
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
 import Link from '@/components/Link.astro'
 import PageHead from '@/components/PageHead.astro'
-import ProjectCard from '@/components/ProjectCard.astro'
 import Layout from '@/layouts/Layout.astro'
-import { getAllProjects } from '@/lib/data-utils'
+import { Icon } from 'astro-icon/components'
 
-const projects = await getAllProjects()
+// 社群連結：之後只要改這裡的 href 就好
+const socials = [
+  {
+    label: 'Instagram',
+    icon: 'lucide:instagram',
+    href: 'https://instagram.com/your-id', // 換成你的帳號
+  },
+  {
+    label: 'X (Twitter)',
+    icon: 'lucide:twitter',
+    href: 'https://x.com/your-id', // 換成你的帳號
+  },
+  {
+    label: 'Bluesky',
+    icon: 'lucide:cloud',
+    href: 'https://bsky.app/profile/your-id.bsky.social', // 換成你的帳號
+  },
+  {
+    label: 'Portfolio',
+    icon: 'lucide:globe',
+    href: 'https://example.com', // 先放假的，之後換成作品集網址
+  },
+  {
+    label: 'Email',
+    icon: 'lucide:mail',
+    href: 'mailto:your-email@example.com', // 先放假的
+  },
+]
 ---
 
 <Layout class="max-w-3xl">
@@ -17,31 +43,31 @@ const projects = await getAllProjects()
     <div class="min-w-full">
       <div class="prose mb-8">
         <p class="mt-0">
-          astro-erudite is an opinionated, unstyled static blogging template
-          that prioritizes simplicity and performance, built with <Link
-            href="https://astro.build"
-            external
-            underline>Astro</Link
-          >, <Link href="https://tailwindcss.com" external underline
-            >Tailwind</Link
-          >, and <Link href="https://ui.shadcn.com" external underline
-            >shadcn/ui</Link
-          >. It provides a clean foundation for your content while being
-          extremely easy to customize.
+          I'm Gwen. I love anime, art, and everything creative, and I'm
+          passionate about making things.
         </p>
         <p>
-          To learn more about the philosophy behind this template, check out the
-          following blog post: <Link
-            href="/blog/the-state-of-static-blogs"
-            underline>The State of Static Blogs in 2024</Link
-          >.
+          This is where I write down my thoughts after finishing a work.
         </p>
       </div>
 
-      <h2 class="mb-4 text-2xl font-medium">Example Projects Listing</h2>
-      <div class="flex flex-col gap-4">
-        {projects.map((project) => <ProjectCard project={project} />)}
-      </div>
+      <h2 class="mb-4 text-2xl font-medium">Find me</h2>
+      <ul class="grid gap-3 sm:grid-cols-2" role="list">
+        {
+          socials.map(({ label, icon, href }) => (
+            <li>
+              <Link
+                href={href}
+                external
+                class="flex items-center gap-3 rounded-lg border border-border/50 p-4 hover:bg-muted/50"
+              >
+                <Icon name={icon} class="size-5 text-muted-foreground" />
+                <span class="font-medium">{label}</span>
+              </Link>
+            </li>
+          ))
+        }
+      </ul>
     </div>
   </section>
 </Layout>
