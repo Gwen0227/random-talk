@@ -207,3 +207,34 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
           /*
            * 最後一頁
            */
+          if (
+            currentPage >= totalPages
+          ) {
+            observer.disconnect()
+            sentinel.style.display = 'none'
+          }
+        } catch (error) {
+          console.error(
+            'Error loading posts:',
+            error
+          )
+
+          observer.disconnect()
+        } finally {
+          isLoading = false
+          loader?.classList.add('hidden')
+        }
+      },
+      {
+        rootMargin: '400px',
+      }
+    )
+
+    observer.observe(sentinel)
+  }
+
+  document.addEventListener(
+    'astro:page-load',
+    setupInfiniteScroll
+  )
+</script>
