@@ -1,4 +1,3 @@
-
 ---
 import BlogCard from '@/components/BlogCard.astro'
 import PageHead from '@/components/PageHead.astro'
@@ -26,14 +25,12 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
   >
     <div class="flex-1">
       <h1 class="mb-4 text-5xl font-bold text-foreground">
-        I'm John Doe.
+        Random Talk
       </h1>
 
       <p class="font-sans text-lg leading-relaxed text-muted-foreground">
-        A passionate web developer with a knack for creating dynamic and
-        responsive web applications. With a background in computer science and
-        a love for coding, I thrive on turning ideas into reality through
-        technology.
+        Random thoughts on anime, manga, and film. Not objective, just
+        honest, with the occasional deep dive into story and visuals.
       </p>
     </div>
 
@@ -210,34 +207,3 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
           /*
            * 最後一頁
            */
-          if (
-            currentPage >= totalPages
-          ) {
-            observer.disconnect()
-            sentinel.style.display = 'none'
-          }
-        } catch (error) {
-          console.error(
-            'Error loading posts:',
-            error
-          )
-
-          observer.disconnect()
-        } finally {
-          isLoading = false
-          loader?.classList.add('hidden')
-        }
-      },
-      {
-        rootMargin: '400px',
-      }
-    )
-
-    observer.observe(sentinel)
-  }
-
-  document.addEventListener(
-    'astro:page-load',
-    setupInfiniteScroll
-  )
-</script>
