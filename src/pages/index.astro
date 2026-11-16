@@ -21,10 +21,10 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
 
   {/* Hero */}
   <section
-    class="flex flex-col-reverse items-center justify-between gap-8 py-12 md:flex-row"
+    class="flex flex-col-reverse items-center gap-6 py-12"
   >
-    <div class="flex-1">
-      <h1 class="mb-4 text-5xl font-bold text-foreground">
+    <div class="text-center">
+      <h1 class="mb-4 text-3xl font-medium text-foreground md:text-4xl">
         Random Talk
       </h1>
 
@@ -34,7 +34,7 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
       </p>
     </div>
 
-    <!-- Avatar：64 × 64px -->
+    <!-- Avatar：128 × 128px -->
     <div
       class="h-32 w-32 flex-shrink-0 overflow-hidden rounded-full border-4 border-border/50 bg-muted shadow-sm"
     >
@@ -98,143 +98,3 @@ const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
     )
 
     const sentinel = document.getElementById(
-      'scroll-sentinel'
-    )
-
-    const loader = document.getElementById('loader')
-
-    if (!wrapper || !container || !sentinel) {
-      return
-    }
-
-    let currentPage = parseInt(
-      wrapper.dataset.currentPage || '1',
-      10
-    )
-
-    const totalPages = parseInt(
-      wrapper.dataset.totalPages || '1',
-      10
-    )
-
-    const baseUrl =
-      wrapper.dataset.baseUrl === '/'
-        ? ''
-        : (wrapper.dataset.baseUrl || '').replace(
-            /\/$/,
-            ''
-          )
-
-    let isLoading = false
-
-    if (currentPage >= totalPages) {
-      sentinel.style.display = 'none'
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      async (entries) => {
-        if (
-          !entries[0].isIntersecting ||
-          isLoading ||
-          currentPage >= totalPages
-        ) {
-          return
-        }
-
-        isLoading = true
-        currentPage++
-
-        loader?.classList.remove('hidden')
-
-        try {
-          const response = await fetch(
-            `${baseUrl}/blog/${currentPage}`
-          )
-
-          if (!response.ok) {
-            throw new Error(
-              `Next page not found: ${currentPage}`
-            )
-          }
-
-          const html = await response.text()
-
-          const parser = new DOMParser()
-
-          const doc = parser.parseFromString(
-            html,
-            'text/html'
-          )
-
-          const newPosts =
-            doc.querySelectorAll(
-              '#post-container li'
-            )
-
-          if (
-            newPosts.length > 0 &&
-            container
-          ) {
-            newPosts.forEach((post) => {
-              /*
-               * 建立新的 li
-               */
-              const newPost =
-                document.createElement('li')
-
-              /*
-               * 左右內距一致：
-               * border-l-4 = 4px 左側灰線
-               * px-2       = 左右各 8px 內距
-               */
-              newPost.className =
-                'border-l-4 border-border/50 px-2'
-
-              /*
-               * 複製文章內容
-               */
-              newPost.innerHTML =
-                post.innerHTML
-
-              /*
-               * 加入首頁
-               */
-              container.appendChild(newPost)
-            })
-          }
-
-          /*
-           * 最後一頁
-           */
-          if (
-            currentPage >= totalPages
-          ) {
-            observer.disconnect()
-            sentinel.style.display = 'none'
-          }
-        } catch (error) {
-          console.error(
-            'Error loading posts:',
-            error
-          )
-
-          observer.disconnect()
-        } finally {
-          isLoading = false
-          loader?.classList.add('hidden')
-        }
-      },
-      {
-        rootMargin: '400px',
-      }
-    )
-
-    observer.observe(sentinel)
-  }
-
-  document.addEventListener(
-    'astro:page-load',
-    setupInfiniteScroll
-  )
-</script>
