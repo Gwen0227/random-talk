@@ -5,32 +5,37 @@ import PageHead from '@/components/PageHead.astro'
 import Layout from '@/layouts/Layout.astro'
 import { Icon } from 'astro-icon/components'
 
-// 社群連結：之後只要改這裡的 href 就好
-const socials = [
+// 連結分組：之後只要改這裡的 label / href 就好
+const linkGroups = [
   {
-    label: 'Instagram',
-    icon: 'lucide:instagram',
-    href: 'https://instagram.com/your-id', // 換成你的帳號
+    title: 'Find me',
+    links: [
+      {
+        label: 'Bluesky',
+        icon: 'lucide:cloud',
+        href: 'https://bsky.app/profile/your-id.bsky.social', // 換成你的帳號
+      },
+    ],
   },
   {
-    label: 'X (Twitter)',
-    icon: 'lucide:twitter',
-    href: 'https://x.com/your-id', // 換成你的帳號
-  },
-  {
-    label: 'Bluesky',
-    icon: 'lucide:cloud',
-    href: 'https://bsky.app/profile/your-id.bsky.social', // 換成你的帳號
-  },
-  {
-    label: 'Portfolio',
-    icon: 'lucide:globe',
-    href: 'https://example.com', // 先放假的，之後換成作品集網址
-  },
-  {
-    label: 'Email',
-    icon: 'lucide:mail',
-    href: 'mailto:your-email@example.com', // 先放假的
+    title: 'Artist accounts',
+    links: [
+      {
+        label: 'X (Twitter)',
+        icon: 'lucide:twitter',
+        href: 'https://x.com/your-id', // 換成你的帳號
+      },
+      {
+        label: 'Portfolio',
+        icon: 'lucide:globe',
+        href: 'https://example.com', // 先放假的，之後換成作品集網址
+      },
+      {
+        label: 'Skeb',
+        icon: 'lucide:palette',
+        href: 'https://skeb.jp/@your-id', // 換成你的 Skeb 帳號
+      },
+    ],
   },
 ]
 ---
@@ -51,23 +56,30 @@ const socials = [
         </p>
       </div>
 
-      <h2 class="mb-4 text-2xl font-medium">Find me</h2>
-      <ul class="grid gap-3 sm:grid-cols-2" role="list">
-        {
-          socials.map(({ label, icon, href }) => (
-            <li>
-              <Link
-                href={href}
-                external
-                class="flex items-center gap-3 rounded-lg border border-border/50 p-4 hover:bg-muted/50"
-              >
-                <Icon name={icon} class="size-5 text-muted-foreground" />
-                <span class="font-medium">{label}</span>
-              </Link>
-            </li>
-          ))
-        }
-      </ul>
+      {
+        linkGroups.map(({ title, links }) => (
+          <div class="mb-8">
+            <h2 class="mb-4 text-2xl font-medium">{title}</h2>
+            <ul class="grid gap-3 sm:grid-cols-2" role="list">
+              {links.map(({ label, icon, href }) => (
+                <li>
+                  <Link
+                    href={href}
+                    external
+                    class="flex items-center gap-3 rounded-lg border border-border/50 p-4 hover:bg-muted/50"
+                  >
+                    <Icon
+                      name={icon}
+                      class="size-5 text-muted-foreground"
+                    />
+                    <span class="font-medium">{label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
     </div>
   </section>
 </Layout>
